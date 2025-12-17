@@ -1,0 +1,342 @@
+/* Geist Font Import - must be first */
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap');
+
+@import "tailwindcss";
+
+/* ============================================
+   Mayson Editor Design System
+   Technical Minimalism (Geist-inspired)
+   ============================================ */
+
+/* ============================================
+   CSS Variables - Dark Theme (Default)
+   ============================================ */
+:root {
+  /* Backgrounds */
+  --bg-base: #0A0A0A;
+  --bg-surface: #0F0F0F;
+  --bg-elevated: #171717;
+  --bg-hover: #1A1A1A;
+  --bg-active: #262626;
+  
+  /* Borders */
+  --border-subtle: #1F1F1F;
+  --border-default: #2E2E2E;
+  --border-strong: #3F3F3F;
+  
+  /* Text */
+  --text-primary: #FAFAFA;
+  --text-secondary: #A1A1A1;
+  --text-tertiary: #737373;
+  --text-muted: #525252;
+  
+  /* Accent (Blue) */
+  --accent: #3B82F6;
+  --accent-hover: #60A5FA;
+  --accent-muted: rgba(59, 130, 246, 0.125);
+  
+  /* Semantic */
+  --success: #22C55E;
+  --warning: #F59E0B;
+  --error: #EF4444;
+  --info: #3B82F6;
+  
+  /* Editor-specific */
+  --editor-bg: #0A0A0A;
+  --editor-line-active: #1A1A1A;
+  --editor-selection: rgba(59, 130, 246, 0.19);
+  --editor-cursor: #FAFAFA;
+  --editor-gutter: #0F0F0F;
+  --editor-gutter-text: #525252;
+  
+  /* Syntax Highlighting (One Dark inspired) */
+  --syntax-key: #61AFEF;
+  --syntax-string: #98C379;
+  --syntax-number: #D19A66;
+  --syntax-boolean: #C678DD;
+  --syntax-null: #5C6370;
+  --syntax-bracket: #ABB2BF;
+  --syntax-punctuation: #5C6370;
+  --syntax-error: #E06C75;
+  
+  /* Diff */
+  --diff-added-bg: rgba(34, 197, 94, 0.08);
+  --diff-added-border: rgba(34, 197, 94, 0.25);
+  --diff-removed-bg: rgba(239, 68, 68, 0.08);
+  --diff-removed-border: rgba(239, 68, 68, 0.25);
+  --diff-modified-bg: rgba(245, 158, 11, 0.08);
+  --diff-modified-border: rgba(245, 158, 11, 0.25);
+}
+
+/* ============================================
+   Light Theme
+   ============================================ */
+.light {
+  --bg-base: #FAFAFA;
+  --bg-surface: #FFFFFF;
+  --bg-elevated: #FFFFFF;
+  --bg-hover: #F4F4F5;
+  --bg-active: #E4E4E7;
+  
+  --border-subtle: #F4F4F5;
+  --border-default: #E4E4E7;
+  --border-strong: #D4D4D8;
+  
+  --text-primary: #09090B;
+  --text-secondary: #52525B;
+  --text-tertiary: #71717A;
+  --text-muted: #A1A1AA;
+  
+  --editor-bg: #FFFFFF;
+  --editor-line-active: #F4F4F5;
+  --editor-selection: rgba(59, 130, 246, 0.19);
+  --editor-gutter: #FAFAFA;
+  --editor-gutter-text: #A1A1AA;
+  
+  /* Syntax (adjusted for light bg) */
+  --syntax-key: #0550AE;
+  --syntax-string: #1A7F37;
+  --syntax-number: #953800;
+  --syntax-boolean: #8250DF;
+  --syntax-null: #6E7781;
+  --syntax-bracket: #24292F;
+  --syntax-punctuation: #6E7781;
+  --syntax-error: #CF222E;
+}
+
+/* ============================================
+   Tailwind v4 Theme Configuration
+   ============================================ */
+@theme {
+  /* Colors */
+  --color-bg-base: var(--bg-base);
+  --color-bg-surface: var(--bg-surface);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-bg-hover: var(--bg-hover);
+  --color-bg-active: var(--bg-active);
+  
+  --color-border-subtle: var(--border-subtle);
+  --color-border-default: var(--border-default);
+  --color-border-strong: var(--border-strong);
+  
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text-muted: var(--text-muted);
+  
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-muted: var(--accent-muted);
+  
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+  --color-info: var(--info);
+  
+  --color-editor-bg: var(--editor-bg);
+  --color-editor-line: var(--editor-line-active);
+  --color-editor-selection: var(--editor-selection);
+  --color-editor-cursor: var(--editor-cursor);
+  --color-editor-gutter: var(--editor-gutter);
+  --color-editor-gutter-text: var(--editor-gutter-text);
+  
+  --color-syntax-key: var(--syntax-key);
+  --color-syntax-string: var(--syntax-string);
+  --color-syntax-number: var(--syntax-number);
+  --color-syntax-boolean: var(--syntax-boolean);
+  --color-syntax-null: var(--syntax-null);
+  --color-syntax-bracket: var(--syntax-bracket);
+  --color-syntax-punctuation: var(--syntax-punctuation);
+  --color-syntax-error: var(--syntax-error);
+  
+  --color-diff-added-bg: var(--diff-added-bg);
+  --color-diff-added-border: var(--diff-added-border);
+  --color-diff-removed-bg: var(--diff-removed-bg);
+  --color-diff-removed-border: var(--diff-removed-border);
+  --color-diff-modified-bg: var(--diff-modified-bg);
+  --color-diff-modified-border: var(--diff-modified-border);
+  
+  /* Fonts */
+  --font-sans: 'Geist', 'Inter', system-ui, sans-serif;
+  --font-mono: 'Geist Mono', 'JetBrains Mono', 'Fira Code', monospace;
+  
+  /* Font sizes */
+  --text-2xs: 0.625rem;
+  --text-2xs--line-height: 0.75rem;
+  
+  /* Animations */
+  --animate-border-beam: border-beam 4s linear infinite;
+  --animate-fade-in: fade-in 0.2s ease-out;
+  --animate-slide-up: slide-up 0.2s ease-out;
+  --animate-pulse-subtle: pulse-subtle 2s ease-in-out infinite;
+  --animate-slide-in-right: slide-in-right 0.2s ease-out;
+  --animate-slide-out-right: slide-out-right 0.15s ease-in forwards;
+}
+
+@keyframes border-beam {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes fade-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes slide-up {
+  0% { opacity: 0; transform: translateY(4px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes slide-in-right {
+  0% { 
+    opacity: 0; 
+    transform: translateX(100%);
+  }
+  100% { 
+    opacity: 1; 
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-out-right {
+  0% { 
+    opacity: 1; 
+    transform: translateX(0);
+  }
+  100% { 
+    opacity: 0; 
+    transform: translateX(100%);
+  }
+}
+
+/* ============================================
+   Base Styles
+   ============================================ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-sans);
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+/* ============================================
+   Scrollbar Styles
+   ============================================ */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-strong);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* ============================================
+   Selection Styles
+   ============================================ */
+::selection {
+  background-color: var(--editor-selection);
+  color: var(--text-primary);
+}
+
+/* Error line selection - more subtle to not clash with error bg */
+.error-line ::selection {
+  background-color: rgba(239, 68, 68, 0.3);
+}
+
+/* ============================================
+   Focus Styles
+   ============================================ */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ============================================
+   Editor Caret/Cursor Styles
+   ============================================ */
+/* Custom cursor blink animation */
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Make the text cursor more visible */
+.caret-editor-cursor {
+  caret-color: var(--editor-cursor);
+}
+
+/* Webkit browsers - thicker caret */
+@supports (-webkit-appearance: none) {
+  textarea.caret-editor-cursor,
+  input.caret-editor-cursor {
+    caret-color: var(--accent);
+  }
+}
+
+/* Firefox - ensure visibility */
+@-moz-document url-prefix() {
+  textarea.caret-editor-cursor,
+  input.caret-editor-cursor {
+    caret-color: var(--accent);
+  }
+}
+
+/* ============================================
+   Utility Classes
+   ============================================ */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Grid background pattern */
+.grid-background {
+  background-color: var(--bg-base);
+  background-image: 
+    linear-gradient(to right, var(--border-subtle) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--border-subtle) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.grid-background-fade {
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%);
+}
