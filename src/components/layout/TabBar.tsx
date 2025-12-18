@@ -79,7 +79,7 @@ export function TabBar() {
     <>
       <div className="h-9 border-b border-border-default bg-bg-surface flex items-center overflow-x-auto no-scrollbar">
         {/* Tabs */}
-        <div className="flex items-center h-full">
+        <div className="flex items-center h-full min-w-0">
           {tabs.map((tab, index) => {
             const dragProps = getDragProps(tab, index);
             const isDragging = dragProps['data-dragging'];
@@ -99,7 +99,7 @@ export function TabBar() {
                 }}
                 {...dragProps}
                 className={cn(
-                  'h-full px-3 flex items-center gap-2 border-b-2 text-sm transition-all min-w-0 cursor-pointer select-none',
+                  'h-full px-2 sm:px-3 flex items-center gap-1.5 sm:gap-2 border-b-2 text-sm transition-all min-w-0 cursor-pointer select-none flex-shrink-0',
                   tab.isActive
                     ? 'border-accent text-text-primary bg-bg-base'
                     : 'border-transparent text-text-secondary hover:text-text-primary hover:bg-bg-hover',
@@ -109,8 +109,8 @@ export function TabBar() {
                   dragState.isDragging && 'transition-transform duration-150'
                 )}
               >
-                <FileJs className="w-4 h-4 text-text-tertiary flex-shrink-0" />
-                <span className="truncate max-w-32">{tab.name}</span>
+                <FileJs className="w-4 h-4 text-text-tertiary flex-shrink-0 hidden sm:block" />
+                <span className="truncate max-w-20 sm:max-w-32">{tab.name}</span>
                 {tab.isDirty && (
                   <span className="w-2 h-2 rounded-full bg-accent flex-shrink-0" />
                 )}
@@ -130,7 +130,7 @@ export function TabBar() {
         {/* New Tab Button */}
         <button
           onClick={() => createDocument()}
-          className="h-full px-2 flex items-center text-text-tertiary hover:text-text-secondary hover:bg-bg-hover transition-colors"
+          className="h-full px-2 flex items-center text-text-tertiary hover:text-text-secondary hover:bg-bg-hover transition-colors flex-shrink-0"
           aria-label="New tab"
         >
           <Plus className="w-4 h-4" />

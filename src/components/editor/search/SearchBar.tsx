@@ -189,15 +189,15 @@ export function SearchBar({
   return (
     <div
       className={cn(
-        'absolute top-0 right-4 z-50',
-        'bg-bg-elevated border border-border-default rounded-lg shadow-lg',
+        'absolute top-0 right-0 sm:right-4 left-0 sm:left-auto z-50',
+        'bg-bg-elevated border border-border-default rounded-none sm:rounded-lg shadow-lg',
         'p-2 space-y-2'
       )}
       onKeyDown={handleKeyDown}
     >
       {/* Search Row */}
-      <div className="flex items-center gap-1">
-        <div className="relative flex-1">
+      <div className="flex items-center gap-1 flex-wrap sm:flex-nowrap">
+        <div className="relative flex-1 min-w-0">
           <MagnifyingGlass
             className="absolute left-2 top-1/2 -translate-y-1/2 text-text-tertiary"
             size={16}
@@ -209,7 +209,7 @@ export function SearchBar({
             onChange={(e) => setSearchText(e.target.value)}
             placeholder="Find"
             className={cn(
-              'w-48 h-8 pl-8 pr-2 text-sm',
+              'w-full h-8 pl-8 pr-2 text-sm',
               'bg-bg-input border border-border-default rounded',
               'text-text-primary placeholder:text-text-tertiary',
               'focus:outline-none focus:border-accent-primary focus:ring-1 focus:ring-accent-primary/50'
@@ -218,11 +218,11 @@ export function SearchBar({
         </div>
         
         {/* Match count */}
-        <span className="text-xs text-text-tertiary min-w-[60px] text-center">
+        <span className="text-xs text-text-tertiary min-w-[50px] sm:min-w-[60px] text-center">
           {matches.length > 0
-            ? `${currentMatchIndex + 1} of ${matches.length}`
+            ? `${currentMatchIndex + 1}/${matches.length}`
             : searchText
-            ? 'No results'
+            ? 'None'
             : ''}
         </span>
         
@@ -234,7 +234,7 @@ export function SearchBar({
             onClick={goToPrevious}
             onMouseDown={preventFocusLoss}
             disabled={matches.length === 0}
-            className="p-1 h-7 w-7"
+            className="p-1 h-8 w-8 sm:h-7 sm:w-7"
           >
             <CaretUp size={16} />
           </Button>
@@ -246,7 +246,7 @@ export function SearchBar({
             onClick={goToNext}
             onMouseDown={preventFocusLoss}
             disabled={matches.length === 0}
-            className="p-1 h-7 w-7"
+            className="p-1 h-8 w-8 sm:h-7 sm:w-7"
           >
             <CaretDown size={16} />
           </Button>
@@ -260,7 +260,7 @@ export function SearchBar({
               size="sm"
               onClick={() => setCaseSensitive((prev) => !prev)}
               onMouseDown={preventFocusLoss}
-              className={cn('p-1 h-7 w-7', caseSensitive && 'bg-accent-primary/20 text-accent-primary')}
+              className={cn('p-1 h-8 w-8 sm:h-7 sm:w-7', caseSensitive && 'bg-accent-primary/20 text-accent-primary')}
             >
               <TextAa size={16} />
             </Button>
@@ -271,7 +271,7 @@ export function SearchBar({
               size="sm"
               onClick={() => setUseRegex((prev) => !prev)}
               onMouseDown={preventFocusLoss}
-              className={cn('p-1 h-7 w-7', useRegex && 'bg-accent-primary/20 text-accent-primary')}
+              className={cn('p-1 h-8 w-8 sm:h-7 sm:w-7', useRegex && 'bg-accent-primary/20 text-accent-primary')}
             >
               <Asterisk size={16} />
             </Button>
@@ -282,7 +282,7 @@ export function SearchBar({
               size="sm"
               onClick={() => setShowReplace((prev) => !prev)}
               onMouseDown={preventFocusLoss}
-              className={cn('p-1 h-7 w-7', showReplace && 'bg-accent-primary/20 text-accent-primary')}
+              className={cn('p-1 h-8 w-8 sm:h-7 sm:w-7', showReplace && 'bg-accent-primary/20 text-accent-primary')}
             >
               <ArrowsClockwise size={16} />
             </Button>
@@ -295,7 +295,7 @@ export function SearchBar({
             variant="ghost"
             size="sm"
             onClick={onClose}
-            className="p-1 h-7 w-7"
+            className="p-1 h-8 w-8 sm:h-7 sm:w-7"
           >
             <X size={16} />
           </Button>
@@ -304,14 +304,14 @@ export function SearchBar({
       
       {/* Replace Row */}
       {showReplace && (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 flex-wrap sm:flex-nowrap">
           <input
             type="text"
             value={replaceText}
             onChange={(e) => setReplaceText(e.target.value)}
             placeholder="Replace"
             className={cn(
-              'w-48 h-8 px-2 text-sm',
+              'flex-1 min-w-0 h-8 px-2 text-sm',
               'bg-bg-input border border-border-default rounded',
               'text-text-primary placeholder:text-text-tertiary',
               'focus:outline-none focus:border-accent-primary focus:ring-1 focus:ring-accent-primary/50'
@@ -324,7 +324,7 @@ export function SearchBar({
               onClick={handleReplaceCurrent}
               onMouseDown={preventFocusLoss}
               disabled={matches.length === 0}
-              className="h-8 px-3"
+              className="h-8 px-2 sm:px-3"
             >
               Replace
             </Button>
@@ -336,7 +336,7 @@ export function SearchBar({
               onClick={handleReplaceAll}
               onMouseDown={preventFocusLoss}
               disabled={matches.length === 0}
-              className="h-8 px-3"
+              className="h-8 px-2 sm:px-3"
             >
               All
             </Button>

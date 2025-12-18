@@ -114,7 +114,7 @@ export function Modal({
   
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby={title ? 'modal-title' : undefined}
@@ -129,9 +129,12 @@ export function Modal({
       <div
         ref={modalRef}
         className={cn(
-          'relative w-full bg-bg-elevated rounded-lg shadow-xl',
-          'border border-border-default',
+          'relative w-full bg-bg-elevated shadow-xl',
+          'border-0 sm:border border-border-default',
           'animate-in fade-in zoom-in-95 duration-200',
+          // Full screen on mobile, constrained on desktop
+          'h-full sm:h-auto sm:max-h-[90vh]',
+          'rounded-none sm:rounded-lg',
           sizeClasses[size]
         )}
       >
@@ -161,7 +164,7 @@ export function Modal({
         )}
         
         {/* Content */}
-        <div className="px-4 py-4">
+        <div className="px-4 py-4 overflow-y-auto max-h-[calc(100vh-8rem)] sm:max-h-none">
           {children}
         </div>
         

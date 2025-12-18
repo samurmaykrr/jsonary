@@ -340,3 +340,53 @@ body {
   mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%);
   -webkit-mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%);
 }
+
+/* ============================================
+   Mobile Responsive Utilities
+   ============================================ */
+
+/* Hide on mobile (< 640px) */
+.hide-mobile {
+  display: flex;
+}
+
+@media (max-width: 639px) {
+  .hide-mobile {
+    display: none !important;
+  }
+}
+
+/* Show only on mobile (< 640px) */
+.show-mobile {
+  display: none;
+}
+
+@media (max-width: 639px) {
+  .show-mobile {
+    display: flex !important;
+  }
+}
+
+/* Touch-friendly tap targets (minimum 44x44px) */
+@media (max-width: 639px) {
+  .touch-target {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* Mobile-safe padding */
+@media (max-width: 639px) {
+  .mobile-padding {
+    padding-left: max(0.5rem, env(safe-area-inset-left));
+    padding-right: max(0.5rem, env(safe-area-inset-right));
+  }
+}
+
+/* Full-width on mobile */
+@media (max-width: 639px) {
+  .mobile-full-width {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}

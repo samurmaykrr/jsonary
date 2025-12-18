@@ -45,8 +45,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       title="Settings"
       size="lg"
       footer={
-        <div className="flex items-center justify-between w-full">
-          <Button variant="ghost" onClick={handleReset}>
+        <div className="flex items-center justify-between w-full gap-2">
+          <Button variant="ghost" onClick={handleReset} className="text-xs sm:text-sm">
             Reset to Defaults
           </Button>
           <Button variant="primary" onClick={onClose}>
@@ -55,16 +55,16 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         </div>
       }
     >
-      <div className="flex gap-4 h-[60vh] max-h-[500px]">
-        {/* Sidebar */}
-        <div className="w-32 flex-shrink-0 border-r border-border-default pr-4">
-          <nav className="space-y-1">
+      <div className="flex flex-col sm:flex-row gap-4 h-[70vh] sm:h-[60vh] sm:max-h-[500px]">
+        {/* Sidebar - horizontal tabs on mobile */}
+        <div className="flex-shrink-0 border-b sm:border-b-0 sm:border-r border-border-default pb-2 sm:pb-0 sm:pr-4 sm:w-32">
+          <nav className="flex sm:flex-col gap-1 overflow-x-auto sm:overflow-visible no-scrollbar">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  'w-full text-left px-3 py-1.5 text-sm rounded transition-colors',
+                  'whitespace-nowrap sm:w-full text-left px-3 py-1.5 text-sm rounded transition-colors flex-shrink-0',
                   activeTab === tab.id
                     ? 'bg-bg-active text-text-primary font-medium'
                     : 'text-text-secondary hover:text-text-primary hover:bg-bg-hover'
@@ -77,7 +77,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         </div>
         
         {/* Content */}
-        <div className="flex-1 overflow-y-auto pr-2">
+        <div className="flex-1 overflow-y-auto pr-0 sm:pr-2 min-h-0">
           {activeTab === 'editor' && (
             <EditorSettingsPanel settings={settings.editor} onUpdate={updateEditor} />
           )}
@@ -111,8 +111,8 @@ interface SettingRowProps {
 
 function SettingRow({ label, description, children }: SettingRowProps) {
   return (
-    <div className="flex items-start justify-between py-3 border-b border-border-subtle last:border-0">
-      <div className="flex-1 mr-4">
+    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between py-3 border-b border-border-subtle last:border-0 gap-2">
+      <div className="flex-1 sm:mr-4">
         <div className="text-sm font-medium text-text-primary">{label}</div>
         {description && (
           <div className="text-xs text-text-tertiary mt-0.5">{description}</div>

@@ -72,9 +72,9 @@ export function StatusBar() {
   const hasValidationErrors = (doc?.validationErrors?.length ?? 0) > 0;
   
   return (
-    <footer className="h-7 border-t border-border-default bg-bg-surface flex items-center px-3 text-xs text-text-secondary select-none">
+    <footer className="h-7 border-t border-border-default bg-bg-surface flex items-center px-2 sm:px-3 text-xs text-text-secondary select-none">
       {/* Left side - Status */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
         {/* Validation Status */}
         {doc && (
           <div className="flex items-center gap-1.5">
@@ -85,7 +85,8 @@ export function StatusBar() {
                   className="flex items-center gap-1.5 hover:opacity-80 transition-opacity cursor-pointer"
                 >
                   <XCircle weight="fill" className="w-3.5 h-3.5 text-red-500" />
-                  <span className="text-red-500">Invalid JSON</span>
+                  <span className="text-red-500 hidden sm:inline">Invalid JSON</span>
+                  <span className="text-red-500 sm:hidden">Error</span>
                 </button>
               </Tooltip>
             ) : hasValidationErrors ? (
@@ -95,15 +96,19 @@ export function StatusBar() {
                   className="flex items-center gap-1.5 hover:opacity-80 transition-opacity cursor-pointer"
                 >
                   <Warning weight="fill" className="w-3.5 h-3.5 text-yellow-500" />
-                  <span className="text-yellow-500">
+                  <span className="text-yellow-500 hidden sm:inline">
                     {doc.validationErrors?.length} schema error{doc.validationErrors?.length !== 1 ? 's' : ''}
+                  </span>
+                  <span className="text-yellow-500 sm:hidden">
+                    {doc.validationErrors?.length}
                   </span>
                 </button>
               </Tooltip>
             ) : isValid ? (
               <>
                 <CheckCircle weight="fill" className="w-3.5 h-3.5 text-green-500" />
-                <span className="text-green-500">Valid JSON</span>
+                <span className="text-green-500 hidden sm:inline">Valid JSON</span>
+                <span className="text-green-500 sm:hidden">OK</span>
               </>
             ) : (
               <Tooltip content="Click to go to error (F8)" position="top">
@@ -112,21 +117,22 @@ export function StatusBar() {
                   className="flex items-center gap-1.5 hover:opacity-80 transition-opacity cursor-pointer"
                 >
                   <XCircle weight="fill" className="w-3.5 h-3.5 text-red-500" />
-                  <span className="text-red-500">Invalid JSON</span>
+                  <span className="text-red-500 hidden sm:inline">Invalid JSON</span>
+                  <span className="text-red-500 sm:hidden">Error</span>
                 </button>
               </Tooltip>
             )}
           </div>
         )}
         
-        {/* Separator */}
-        {doc && <div className="w-px h-3 bg-border-default" />}
+        {/* Separator - hidden on mobile */}
+        {doc && <div className="hidden sm:block w-px h-3 bg-border-default" />}
         
-        {/* Document Info */}
+        {/* Document Info - hidden on mobile */}
         {doc && (
-          <div className="flex items-center gap-1.5">
+          <div className="hidden sm:flex items-center gap-1.5">
             <FileJs weight="regular" className="w-3.5 h-3.5 text-text-tertiary" />
-            <span>{doc.name}</span>
+            <span className="truncate max-w-[150px]">{doc.name}</span>
           </div>
         )}
       </div>
@@ -135,31 +141,32 @@ export function StatusBar() {
       <div className="flex-1" />
       
       {/* Right side - Stats */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3">
         {doc && (
           <>
             {/* Line count */}
-            <span>Ln {lines}</span>
+            <span className="hidden sm:inline">Ln {lines}</span>
+            <span className="sm:hidden">{lines}L</span>
             
             {/* Separator */}
-            <div className="w-px h-3 bg-border-default" />
+            <div className="w-px h-3 bg-border-default hidden sm:block" />
             
-            {/* Character count */}
-            <span>{chars.toLocaleString()} chars</span>
+            {/* Character count - hidden on small mobile */}
+            <span className="hidden sm:inline">{chars.toLocaleString()} chars</span>
             
             {/* Separator */}
-            <div className="w-px h-3 bg-border-default" />
+            <div className="w-px h-3 bg-border-default hidden sm:block" />
             
             {/* File size */}
             <span>{size}</span>
             
             {/* Separator */}
-            <div className="w-px h-3 bg-border-default" />
+            <div className="w-px h-3 bg-border-default hidden sm:block" />
           </>
         )}
         
-        {/* Encoding */}
-        <span>UTF-8</span>
+        {/* Encoding - hidden on mobile */}
+        <span className="hidden sm:inline">UTF-8</span>
       </div>
     </footer>
   );

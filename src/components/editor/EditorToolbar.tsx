@@ -175,9 +175,9 @@ export function EditorToolbar() {
   
   return (
     <>
-      <div className="flex items-center gap-1 px-2 py-1 border-b border-border-subtle bg-bg-surface">
-        {/* View mode toggle */}
-        <div className="flex items-center gap-0.5 bg-bg-primary rounded p-0.5 border border-border-subtle">
+      <div className="flex items-center gap-1 px-2 py-1 border-b border-border-subtle bg-bg-surface overflow-x-auto no-scrollbar">
+        {/* View mode toggle - hidden on mobile since it's in header */}
+        <div className="hidden sm:flex items-center gap-0.5 bg-bg-primary rounded p-0.5 border border-border-subtle">
           <ViewToggle view="text" activeView={viewMode} onClick={handleViewChange} label="text" />
           <ViewToggle view="tree" activeView={viewMode} onClick={handleViewChange} label="tree" />
           <ViewToggle view="table" activeView={viewMode} onClick={handleViewChange} label="table" />
@@ -213,21 +213,23 @@ export function EditorToolbar() {
         
         <ToolbarDivider />
         
-        {/* Sort buttons */}
-        <ToolbarButton
-          icon={<SortAscending size={18} />}
-          label="Sort Keys A-Z"
-          onClick={() => handleSortKeys(true)}
-          disabled={!isValidJson}
-        />
-        <ToolbarButton
-          icon={<SortDescending size={18} />}
-          label="Sort Keys Z-A"
-          onClick={() => handleSortKeys(false)}
-          disabled={!isValidJson}
-        />
-        
-        <ToolbarDivider />
+        {/* Sort buttons - hidden on mobile */}
+        <div className="hidden sm:flex items-center gap-1">
+          <ToolbarButton
+            icon={<SortAscending size={18} />}
+            label="Sort Keys A-Z"
+            onClick={() => handleSortKeys(true)}
+            disabled={!isValidJson}
+          />
+          <ToolbarButton
+            icon={<SortDescending size={18} />}
+            label="Sort Keys Z-A"
+            onClick={() => handleSortKeys(false)}
+            disabled={!isValidJson}
+          />
+          
+          <ToolbarDivider />
+        </div>
         
         {/* Tools section */}
         <ToolbarButton
@@ -236,16 +238,18 @@ export function EditorToolbar() {
           onClick={() => setTransformModalOpen(true)}
           disabled={!isValidJson}
         />
-        <ToolbarButton
-          icon={<GitDiff size={18} />}
-          label="Compare JSON"
-          onClick={() => setCompareModalOpen(true)}
-        />
-        <ToolbarButton
-          icon={<CheckSquare size={18} />}
-          label="Validate Schema"
-          onClick={() => setSchemaModalOpen(true)}
-        />
+        <div className="hidden sm:flex items-center gap-1">
+          <ToolbarButton
+            icon={<GitDiff size={18} />}
+            label="Compare JSON"
+            onClick={() => setCompareModalOpen(true)}
+          />
+          <ToolbarButton
+            icon={<CheckSquare size={18} />}
+            label="Validate Schema"
+            onClick={() => setSchemaModalOpen(true)}
+          />
+        </div>
         
         <ToolbarDivider />
         
