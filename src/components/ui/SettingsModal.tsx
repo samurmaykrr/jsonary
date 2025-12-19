@@ -26,12 +26,12 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [activeTab, setActiveTab] = useState<SettingsTab>('editor');
   const { settings, updateEditor, updateFormatting, updateBehavior, updateUI, resetSettings } = useSettings();
   
-  const tabs: { id: SettingsTab; label: string }[] = [
-    { id: 'editor', label: 'Editor' },
-    { id: 'formatting', label: 'Formatting' },
-    { id: 'behavior', label: 'Behavior' },
-    { id: 'ui', label: 'Appearance' },
-    { id: 'shortcuts', label: 'Shortcuts' },
+  const tabs: { id: SettingsTab; label: string; shortLabel: string }[] = [
+    { id: 'editor', label: 'Editor', shortLabel: 'Editor' },
+    { id: 'formatting', label: 'Formatting', shortLabel: 'Format' },
+    { id: 'behavior', label: 'Behavior', shortLabel: 'Behavior' },
+    { id: 'ui', label: 'Appearance', shortLabel: 'UI' },
+    { id: 'shortcuts', label: 'Shortcuts', shortLabel: 'Keys' },
   ];
   
   const handleReset = useCallback(() => {
@@ -57,44 +57,67 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         </div>
       }
     >
-      <div className="flex flex-col sm:flex-row gap-4 h-[70vh] sm:h-[60vh] sm:max-h-[500px]">
-        {/* Sidebar - horizontal tabs on mobile */}
-        <div className="flex-shrink-0 border-b sm:border-b-0 sm:border-r border-border-default pb-2 sm:pb-0 sm:pr-4 sm:w-32">
-          <nav className="flex sm:flex-col gap-1 overflow-x-auto sm:overflow-visible no-scrollbar">
+      <div className="flex flex-col h-[75vh] sm:h-[60vh] sm:max-h-[500px]">
+        {/* Mobile: Segmented tabs at top */}
+        <div className="sm:hidden flex-shrink-0 mb-3">
+          <div className="flex bg-bg-surface rounded-lg p-1 gap-0.5">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  'whitespace-nowrap sm:w-full text-left px-3 py-1.5 text-sm rounded transition-colors flex-shrink-0',
+                  'flex-1 px-2 py-2 text-xs font-medium rounded-md transition-colors',
                   activeTab === tab.id
-                    ? 'bg-bg-active text-text-primary font-medium'
-                    : 'text-text-secondary hover:text-text-primary hover:bg-bg-hover'
+                    ? 'bg-bg-active text-text-primary shadow-sm'
+                    : 'text-text-secondary hover:text-text-primary'
                 )}
               >
-                {tab.label}
+                {tab.shortLabel}
               </button>
             ))}
-          </nav>
+          </div>
         </div>
         
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto pr-0 sm:pr-2 min-h-0">
-          {activeTab === 'editor' && (
-            <EditorSettingsPanel settings={settings.editor} onUpdate={updateEditor} />
-          )}
-          {activeTab === 'formatting' && (
-            <FormattingSettingsPanel settings={settings.formatting} onUpdate={updateFormatting} />
-          )}
-          {activeTab === 'behavior' && (
-            <BehaviorSettingsPanel settings={settings.behavior} onUpdate={updateBehavior} />
-          )}
-          {activeTab === 'ui' && (
-            <UISettingsPanel settings={settings.ui} onUpdate={updateUI} />
-          )}
-          {activeTab === 'shortcuts' && (
-            <ShortcutsPanel />
-          )}
+        {/* Desktop: Sidebar layout */}
+        <div className="flex-1 flex flex-col sm:flex-row gap-4 min-h-0">
+          {/* Desktop sidebar */}
+          <div className="hidden sm:block flex-shrink-0 border-r border-border-default pr-4 w-32">
+            <nav className="flex flex-col gap-1">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={cn(
+                    'w-full text-left px-3 py-1.5 text-sm rounded transition-colors',
+                    activeTab === tab.id
+                      ? 'bg-bg-active text-text-primary font-medium'
+                      : 'text-text-secondary hover:text-text-primary hover:bg-bg-hover'
+                  )}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </nav>
+          </div>
+          
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto pr-0 sm:pr-2 min-h-0">
+            {activeTab === 'editor' && (
+              <EditorSettingsPanel settings={settings.editor} onUpdate={updateEditor} />
+            )}
+            {activeTab === 'formatting' && (
+              <FormattingSettingsPanel settings={settings.formatting} onUpdate={updateFormatting} />
+            )}
+            {activeTab === 'behavior' && (
+              <BehaviorSettingsPanel settings={settings.behavior} onUpdate={updateBehavior} />
+            )}
+            {activeTab === 'ui' && (
+              <UISettingsPanel settings={settings.ui} onUpdate={updateUI} />
+            )}
+            {activeTab === 'shortcuts' && (
+              <ShortcutsPanel />
+            )}
+          </div>
         </div>
       </div>
     </Modal>
@@ -241,7 +264,7 @@ function EditorSettingsPanel({ settings, onUpdate }: EditorSettingsPanelProps) {
           value={settings.fontSize}
           onChange={(fontSize) => onUpdate({ fontSize })}
           min={10}
-          max={24}
+          max={50}
         />
       </SettingRow>
       
@@ -438,6 +461,20 @@ function UISettingsPanel({ settings, onUpdate }: UISettingsPanelProps) {
             { value: 'system', label: 'System' },
           ]}
           onChange={(theme) => onUpdate({ theme: theme as 'light' | 'dark' | 'system' })}
+        />
+      </SettingRow>
+      
+      <SettingRow label="UI Scale" description="Scale the interface (affects all UI elements)">
+        <Select
+          value={settings.uiScale.toString()}
+          options={[
+            { value: '0.8', label: '80%' },
+            { value: '0.9', label: '90%' },
+            { value: '1', label: '100%' },
+            { value: '1.1', label: '110%' },
+            { value: '1.2', label: '120%' },
+          ]}
+          onChange={(scale) => onUpdate({ uiScale: parseFloat(scale) })}
         />
       </SettingRow>
       

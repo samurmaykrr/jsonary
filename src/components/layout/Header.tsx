@@ -371,42 +371,48 @@ export function Header() {
         {/* View Mode Toggle - Desktop */}
         <div className="hidden sm:flex items-center">
           <div className="inline-flex rounded-md border border-border-default bg-bg-base p-0.5">
-            <button
-              onClick={() => handleViewModeChange('text')}
-              className={cn(
-                'px-3 py-1 text-xs font-medium rounded flex items-center gap-1.5 transition-colors',
-                currentMode === 'text'
-                  ? 'bg-bg-surface text-text-primary shadow-sm'
-                  : 'text-text-tertiary hover:text-text-secondary'
-              )}
-            >
-              <Code className="w-3.5 h-3.5" />
-              Text
-            </button>
-            <button
-              onClick={() => handleViewModeChange('tree')}
-              className={cn(
-                'px-3 py-1 text-xs font-medium rounded flex items-center gap-1.5 transition-colors',
-                currentMode === 'tree'
-                  ? 'bg-bg-surface text-text-primary shadow-sm'
-                  : 'text-text-tertiary hover:text-text-secondary'
-              )}
-            >
-              <TreeStructure className="w-3.5 h-3.5" />
-              Tree
-            </button>
-            <button
-              onClick={() => handleViewModeChange('table')}
-              className={cn(
-                'px-3 py-1 text-xs font-medium rounded flex items-center gap-1.5 transition-colors',
-                currentMode === 'table'
-                  ? 'bg-bg-surface text-text-primary shadow-sm'
-                  : 'text-text-tertiary hover:text-text-secondary'
-              )}
-            >
-              <Table className="w-3.5 h-3.5" />
-              Table
-            </button>
+            <Tooltip content="Text View" shortcut="Ctrl+1" position="bottom">
+              <button
+                onClick={() => handleViewModeChange('text')}
+                className={cn(
+                  'px-3 py-1 text-xs font-medium rounded flex items-center gap-1.5 transition-colors',
+                  currentMode === 'text'
+                    ? 'bg-bg-surface text-text-primary shadow-sm'
+                    : 'text-text-tertiary hover:text-text-secondary'
+                )}
+              >
+                <Code className="w-3.5 h-3.5" />
+                Text
+              </button>
+            </Tooltip>
+            <Tooltip content="Tree View" shortcut="Ctrl+2" position="bottom">
+              <button
+                onClick={() => handleViewModeChange('tree')}
+                className={cn(
+                  'px-3 py-1 text-xs font-medium rounded flex items-center gap-1.5 transition-colors',
+                  currentMode === 'tree'
+                    ? 'bg-bg-surface text-text-primary shadow-sm'
+                    : 'text-text-tertiary hover:text-text-secondary'
+                )}
+              >
+                <TreeStructure className="w-3.5 h-3.5" />
+                Tree
+              </button>
+            </Tooltip>
+            <Tooltip content="Table View" shortcut="Ctrl+3" position="bottom">
+              <button
+                onClick={() => handleViewModeChange('table')}
+                className={cn(
+                  'px-3 py-1 text-xs font-medium rounded flex items-center gap-1.5 transition-colors',
+                  currentMode === 'table'
+                    ? 'bg-bg-surface text-text-primary shadow-sm'
+                    : 'text-text-tertiary hover:text-text-secondary'
+                )}
+              >
+                <Table className="w-3.5 h-3.5" />
+                Table
+              </button>
+            </Tooltip>
           </div>
         </div>
         
@@ -473,7 +479,7 @@ export function Header() {
             </Button>
           </Tooltip>
           
-          <Tooltip content={`Switch to ${isDark ? 'light' : 'dark'} mode`} position="bottom">
+          <Tooltip content={`Switch to ${isDark ? 'light' : 'dark'} mode`} shortcut="Ctrl+Shift+D" position="bottom">
             <Button
               variant="ghost"
               size="sm"
@@ -488,7 +494,7 @@ export function Header() {
             </Button>
           </Tooltip>
           
-          <Tooltip content="Settings" position="bottom">
+          <Tooltip content="Settings" shortcut="Ctrl+," position="bottom">
             <Button
               variant="ghost"
               size="sm"

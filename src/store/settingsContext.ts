@@ -31,6 +31,7 @@ export interface BehaviorSettings {
 export interface UISettings {
   theme: 'light' | 'dark' | 'system';
   defaultViewMode: 'text' | 'tree' | 'table';
+  uiScale: number; // UI scale factor (0.8 to 1.2)
 }
 
 export interface SettingsState {
@@ -69,6 +70,7 @@ export const DEFAULT_SETTINGS: SettingsState = {
   ui: {
     theme: 'dark',
     defaultViewMode: 'text',
+    uiScale: 1,
   },
 };
 

@@ -18,15 +18,35 @@ export interface TooltipProps {
   delay?: number;
   disabled?: boolean;
   className?: string;
+  /** Keyboard shortcut to display (e.g., "Ctrl+S") */
+  shortcut?: string;
+}
+
+/**
+ * Format shortcut for current platform (Cmd on Mac, Ctrl on others)
+ */
+function formatShortcut(shortcut: string): string {
+  const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/.test(navigator.platform);
+  
+  if (isMac) {
+    return shortcut
+      .replace(/Ctrl\+/gi, '⌘')
+      .replace(/Alt\+/gi, '⌥')
+      .replace(/Shift\+/gi, '⇧')
+      .replace(/\+/g, '');
+  }
+  
+  return shortcut;
 }
 
 export function Tooltip({
   content,
   children,
   position = 'top',
-  delay = 300,
+  delay = 400,
   disabled = false,
   className,
+  shortcut,
 }: TooltipProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [coords, setCoords] = useState<CSSProperties>({});
@@ -104,6 +124,8 @@ export function Tooltip({
     right: 'origin-left',
   };
   
+  const formattedShortcut = shortcut ? formatShortcut(shortcut) : null;
+  
   return (
     <>
       <div
@@ -126,13 +148,19 @@ export function Tooltip({
               'bg-bg-elevated text-text-primary',
               'border border-border-default rounded shadow-lg',
               'animate-in fade-in zoom-in-95 duration-100',
+              'flex items-center gap-2',
               positionClasses[position],
               className
             )}
             style={coords}
             role="tooltip"
           >
-            {content}
+            <span>{content}</span>
+            {formattedShortcut && (
+              <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-bg-base border border-border-subtle rounded text-text-tertiary">
+                {formattedShortcut}
+              </kbd>
+            )}
           </div>,
           document.body
         )}

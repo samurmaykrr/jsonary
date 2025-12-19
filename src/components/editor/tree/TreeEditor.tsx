@@ -1092,7 +1092,13 @@ export function TreeEditor() {
         </div>
         
         {/* Tree Content */}
-        <div className="flex-1 overflow-auto py-2 font-mono text-sm">
+        <div 
+          className="flex-1 overflow-auto py-2"
+          style={{ 
+            fontFamily: 'var(--editor-font-family)', 
+            fontSize: 'var(--editor-font-size)' 
+          }}
+        >
           <TreeNode
             keyName={null}
             value={parsedValue as JsonValue}

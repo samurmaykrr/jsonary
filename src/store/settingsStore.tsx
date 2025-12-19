@@ -115,7 +115,7 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
   // Apply theme - include settings.ui as dependency
   const uiSettings = settings.ui;
   useEffect(() => {
-    const { theme } = uiSettings;
+    const { theme, uiScale } = uiSettings;
     
     const applyTheme = (isDark: boolean) => {
       if (isDark) {
@@ -124,6 +124,9 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
         document.documentElement.classList.add('light');
       }
     };
+    
+    // Apply UI scale
+    document.documentElement.style.setProperty('--ui-scale', String(uiScale));
     
     if (theme === 'system') {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');

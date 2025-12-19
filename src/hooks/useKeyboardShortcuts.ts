@@ -56,7 +56,7 @@ export function useKeyboardShortcuts(shortcuts: KeyboardShortcut[]) {
       ) {
         // But still allow some shortcuts like Ctrl+S, Ctrl+Z, Ctrl+Y, Ctrl+O, Ctrl+F
         const keyId = getKeyId(e);
-        if (!['ctrl+s', 'ctrl+n', 'ctrl+w', 'ctrl+t', 'ctrl+z', 'ctrl+y', 'ctrl+shift+z', 'ctrl+o', 'ctrl+f', 'ctrl+h', 'escape', 'ctrl+shift+f', 'ctrl+shift+m', 'f8', 'ctrl+g'].includes(keyId)) {
+        if (!['ctrl+s', 'ctrl+n', 'ctrl+w', 'ctrl+z', 'ctrl+y', 'ctrl+shift+z', 'ctrl+o', 'ctrl+f', 'ctrl+h', 'escape', 'ctrl+shift+f', 'ctrl+shift+m', 'f8', 'ctrl+g', 'alt+]', 'alt+['].includes(keyId)) {
           return;
         }
       }
@@ -115,7 +115,6 @@ export function useEditorShortcuts(handlers: {
       result.push({ key: 'o', ctrl: true, action: handlers.onOpen, description: 'Open File' });
     }
     if (handlers.onNewTab) {
-      result.push({ key: 't', ctrl: true, action: handlers.onNewTab, description: 'New Tab' });
       result.push({ key: 'n', ctrl: true, action: handlers.onNewTab, description: 'New Tab' });
     }
     if (handlers.onCloseTab) {
@@ -150,13 +149,13 @@ export function useEditorShortcuts(handlers: {
     if (handlers.onViewTable) {
       result.push({ key: '3', ctrl: true, action: handlers.onViewTable, description: 'Table View' });
     }
-    // Tab navigation
+    // Tab navigation - use Alt+] and Alt+[ to avoid browser conflicts
     if (handlers.onNextTab) {
-      result.push({ key: 'Tab', ctrl: true, action: handlers.onNextTab, description: 'Next Tab' });
+      result.push({ key: ']', alt: true, action: handlers.onNextTab, description: 'Next Tab' });
       result.push({ key: 'PageDown', ctrl: true, action: handlers.onNextTab, description: 'Next Tab' });
     }
     if (handlers.onPrevTab) {
-      result.push({ key: 'Tab', ctrl: true, shift: true, action: handlers.onPrevTab, description: 'Previous Tab' });
+      result.push({ key: '[', alt: true, action: handlers.onPrevTab, description: 'Previous Tab' });
       result.push({ key: 'PageUp', ctrl: true, action: handlers.onPrevTab, description: 'Previous Tab' });
     }
     // Other utilities
@@ -218,8 +217,8 @@ export function getShortcutsList(): { key: string; description: string; category
     { key: 'Ctrl+Shift+C', description: 'Collapse All (Tree)', category: 'View' },
     
     // Navigation
-    { key: 'Ctrl+Tab', description: 'Next Tab', category: 'Navigation' },
-    { key: 'Ctrl+Shift+Tab', description: 'Previous Tab', category: 'Navigation' },
+    { key: 'Alt+]', description: 'Next Tab', category: 'Navigation' },
+    { key: 'Alt+[', description: 'Previous Tab', category: 'Navigation' },
     { key: 'Ctrl+PageDown', description: 'Next Tab', category: 'Navigation' },
     { key: 'Ctrl+PageUp', description: 'Previous Tab', category: 'Navigation' },
     { key: 'F8', description: 'Go to Error', category: 'Navigation' },

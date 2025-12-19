@@ -2,7 +2,7 @@ import { X, Plus, FileJs, Copy, Files, XCircle, PencilSimple } from '@phosphor-i
 import { cn } from '@/lib/utils';
 import { useTabs, useDocumentActions } from '@/store/useDocumentStore';
 import { usePanelLayout } from '@/store/useEditorStore';
-import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/components/ui';
+import { ContextMenu, useContextMenu, Tooltip, type ContextMenuItem } from '@/components/ui';
 import { useCallback, useState, useRef, useEffect } from 'react';
 import { useDragAndDrop } from '@/hooks';
 
@@ -210,13 +210,15 @@ export function TabBar() {
         </div>
         
         {/* New Tab Button */}
-        <button
-          onClick={() => createDocument()}
-          className="h-full px-2 flex items-center text-text-tertiary hover:text-text-secondary hover:bg-bg-hover transition-colors flex-shrink-0"
-          aria-label="New tab"
-        >
-          <Plus className="w-4 h-4" />
-        </button>
+        <Tooltip content="New Tab" shortcut="Ctrl+N" position="bottom">
+          <button
+            onClick={() => createDocument()}
+            className="h-full px-2 flex items-center text-text-tertiary hover:text-text-secondary hover:bg-bg-hover transition-colors flex-shrink-0"
+            aria-label="New tab"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+        </Tooltip>
       </div>
       
       {/* Context Menu */}

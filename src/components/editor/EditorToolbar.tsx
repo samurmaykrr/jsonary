@@ -32,7 +32,7 @@ interface ToolbarButtonProps {
 
 function ToolbarButton({ icon, label, shortcut, onClick, disabled, active, highlight }: ToolbarButtonProps) {
   return (
-    <Tooltip content={shortcut ? `${label} (${shortcut})` : label}>
+    <Tooltip content={label} shortcut={shortcut}>
       <button
         onClick={onClick}
         disabled={disabled}

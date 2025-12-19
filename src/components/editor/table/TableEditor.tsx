@@ -477,7 +477,14 @@ export function TableEditor() {
           ref={tableContainerRef}
           className="flex-1 overflow-auto"
         >
-          <table className="w-full border-collapse text-sm" style={{ tableLayout: 'fixed' }}>
+          <table 
+            className="w-full border-collapse" 
+            style={{ 
+              tableLayout: 'fixed',
+              fontFamily: 'var(--editor-font-family)',
+              fontSize: 'var(--editor-font-size)',
+            }}
+          >
             <thead className="sticky top-0 z-10 bg-bg-surface">
               {table.getHeaderGroups().map(headerGroup => (
                 <tr key={headerGroup.id}>
@@ -556,7 +563,7 @@ export function TableEditor() {
                         <td
                           key={cell.id}
                           className={cn(
-                            'px-3 py-1 border-r border-border-subtle font-mono overflow-hidden text-ellipsis whitespace-nowrap',
+                            'px-3 py-1 border-r border-border-subtle overflow-hidden text-ellipsis whitespace-nowrap',
                             cell.column.id === '__rowNum' && 'sticky left-0 bg-inherit',
                             cell.column.id === '__actions' && 'sticky left-[50px] bg-inherit text-center',
                             isDataColumn && isEditable(cell.getValue() as JsonValue) && 'cursor-pointer'
