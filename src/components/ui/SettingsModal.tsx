@@ -298,7 +298,7 @@ function EditorSettingsPanel({ settings, onUpdate }: EditorSettingsPanelProps) {
           className="text-sm text-text-primary"
           style={{ fontFamily: settings.fontFamily, fontSize: settings.fontSize }}
         >
-          {"{ \"name\": \"JSON Editor\", \"version\": 1.0 }"}
+          {"{ \"name\": \"Jsonary\", \"version\": \"0.1.0\" }"}
         </div>
       </div>
       

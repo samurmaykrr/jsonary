@@ -1,0 +1,63 @@
+{
+  "app": {
+    "name": "Jsonary",
+    "displayName": "Jsonary",
+    "tagline": "A powerful JSON editor with text, tree, and table views",
+    "description": "Modern JSON editor with multiple viewing modes, schema validation, and powerful transformation tools",
+    "version": "0.1.0",
+    "author": {
+      "name": "samurmaykrr",
+      "url": "https://github.com/samurmaykrr",
+      "displayName": "samurmaykrr"
+    }
+  },
+  "links": {
+    "github": "https://github.com/samurmaykrr/jsonary",
+    "issues": "https://github.com/samurmaykrr/jsonary/issues",
+    "discussions": "https://github.com/samurmaykrr/jsonary/discussions",
+    "support": "https://github.com/samurmaykrr/jsonary/issues/new",
+    "homepage": "https://jsonary.app",
+    "docs": "https://github.com/samurmaykrr/jsonary#readme"
+  },
+  "social": {
+    "twitter": {
+      "handle": "@jsonary",
+      "url": "https://twitter.com/jsonary"
+    }
+  },
+  "assets": {
+    "logo": "/icon.svg",
+    "favicon": "/icon.svg",
+    "appleTouchIcon": "/icon.svg",
+    "ogImage": "/icon.svg"
+  },
+  "theme": {
+    "primaryColor": "#3B82F6",
+    "darkBackground": "#0f0f11"
+  },
+  "features": {
+    "keywords": [
+      "JSON",
+      "editor",
+      "formatter",
+      "viewer",
+      "tree",
+      "table",
+      "validator",
+      "schema"
+    ]
+  },
+  "support": {
+    "email": null,
+    "chat": null,
+    "helpText": "For questions or issues, please visit our GitHub repository"
+  },
+  "legal": {
+    "copyright": "© 2024 samurmaykrr",
+    "license": "MIT"
+  },
+  "pwa": {
+    "themeColor": "#0f0f11",
+    "appleMobileWebAppTitle": "Jsonary"
+  }
+}

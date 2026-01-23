@@ -180,7 +180,7 @@ export function SearchBar({
         </span>
         
         {/* Navigation buttons */}
-        <Tooltip content="Previous match (Shift+Enter)" position="bottom">
+        <Tooltip content="Previous match (Shift+Enter)" position="top">
           <Button
             variant="ghost"
             size="sm"
@@ -192,7 +192,7 @@ export function SearchBar({
             <CaretUp size={16} />
           </Button>
         </Tooltip>
-        <Tooltip content="Next match (Enter)" position="bottom">
+        <Tooltip content="Next match (Enter)" position="top">
           <Button
             variant="ghost"
             size="sm"
@@ -204,10 +204,10 @@ export function SearchBar({
             <CaretDown size={16} />
           </Button>
         </Tooltip>
-        
+
         {/* Options */}
         <div className="flex items-center gap-0.5 border-l border-border-subtle pl-1 ml-1">
-          <Tooltip content="Match case (Aa)" position="bottom">
+          <Tooltip content="Match case (Aa)" position="top">
             <Button
               variant="ghost"
               size="sm"
@@ -218,7 +218,7 @@ export function SearchBar({
               <TextAa size={16} />
             </Button>
           </Tooltip>
-          <Tooltip content="Use regular expression" position="bottom">
+          <Tooltip content="Use regular expression" position="top">
             <Button
               variant="ghost"
               size="sm"
@@ -229,7 +229,7 @@ export function SearchBar({
               <Asterisk size={16} />
             </Button>
           </Tooltip>
-          <Tooltip content="Toggle replace (Ctrl+H)" position="bottom">
+          <Tooltip content="Toggle replace (Ctrl+H)" position="top">
             <Button
               variant="ghost"
               size="sm"
@@ -241,9 +241,9 @@ export function SearchBar({
             </Button>
           </Tooltip>
         </div>
-        
+
         {/* Close button */}
-        <Tooltip content="Close (Escape)" position="bottom">
+        <Tooltip content="Close (Escape)" position="top">
           <Button
             variant="ghost"
             size="sm"
@@ -270,7 +270,7 @@ export function SearchBar({
               'focus:outline-none focus:border-accent-primary focus:ring-1 focus:ring-accent-primary/50'
             )}
           />
-          <Tooltip content="Replace current match" position="bottom">
+          <Tooltip content="Replace current match" position="top">
             <Button
               variant="secondary"
               size="sm"
@@ -282,7 +282,7 @@ export function SearchBar({
               Replace
             </Button>
           </Tooltip>
-          <Tooltip content="Replace all matches" position="bottom">
+          <Tooltip content="Replace all matches" position="top">
             <Button
               variant="secondary"
               size="sm"

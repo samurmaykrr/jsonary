@@ -200,33 +200,13 @@ interface DocumentProviderProps {
   children: ReactNode;
 }
 
-const SAMPLE_JSON = `{
-  "name": "Mayson Editor",
-  "version": "0.1.0",
-  "description": "A feature-complete JSON editor",
-  "features": [
-    "Multi-tab support",
-    "Syntax highlighting",
-    "Tree view",
-    "Table view"
-  ],
-  "settings": {
-    "theme": "dark",
-    "fontSize": 14,
-    "tabSize": 2
-  },
-  "isAwesome": true,
-  "rating": 4.9,
-  "users": null
-}`;
-
-// Create initial state with one document
+// Create initial state with one empty document
 function createInitialState(): DocumentState {
   const id = generateId();
-  const doc = createDocument(id, 'example.json', SAMPLE_JSON);
+  const doc = createDocument(id, 'Untitled', '{}');
   const documents = new Map<string, Document>();
   documents.set(id, doc);
-  
+
   return {
     documents,
     activeDocumentId: id,

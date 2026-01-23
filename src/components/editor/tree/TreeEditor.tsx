@@ -1,6 +1,6 @@
-import { useState, useMemo, useCallback, useRef } from 'react';
-import { 
-  CaretRight, 
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import {
+  CaretRight,
   CaretDown,
   CaretLeft,
   CaretDoubleLeft,
@@ -18,11 +18,16 @@ import {
   Plus,
   CopySimple,
   Check,
+  Code,
 } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import { parseJson } from '@/lib/json';
-import { useCurrentDocument, useUpdateCurrentContent } from '@/store/useDocumentStore';
+import { findPathLine } from '@/lib/json/validator';
+import { useCurrentDocument, useUpdateCurrentContent, useDocumentActions } from '@/store/useDocumentStore';
+import { useSearch } from '@/store/useSearchStore';
+import { useEditor } from '@/store/useEditorStore';
 import { ContextMenu, useContextMenu, InlineEditor, type ContextMenuItem } from '@/components/ui';
+import { SearchBar } from '@/components/editor/search/SearchBar';
 import type { JsonValue, JsonObject } from '@/types';
 
 // Maximum items to show per page in large arrays
@@ -541,19 +546,35 @@ function addItemAtPath(obj: JsonValue, path: string, key: string | null, value: 
  */
 function getParentPath(path: string): string {
   if (path === '$') return '$';
-  
+
   // Handle array index like $[0] or $.foo[0]
   const lastBracket = path.lastIndexOf('[');
   const lastDot = path.lastIndexOf('.');
-  
+
   if (lastBracket > lastDot) {
     const parentPath = path.substring(0, lastBracket);
     return parentPath || '$';
   } else if (lastDot > 0) {
     return path.substring(0, lastDot);
   }
-  
+
   return '$';
+}
+
+/**
+ * Convert tree path ($.foo.bar[0]) to JSON pointer (/foo/bar/0)
+ */
+function treePathToJsonPointer(path: string): string {
+  if (path === '$') return '/';
+
+  // Remove leading $. or $
+  const withoutRoot = path.replace(/^\$\.?/, '');
+
+  // Split by . and [ to get segments
+  const segments = withoutRoot.split(/\.|\[|\]/).filter(Boolean);
+
+  // Join with / to create JSON pointer
+  return '/' + segments.join('/');
 }
 
 /**
@@ -673,14 +694,17 @@ function Breadcrumbs({
 export function TreeEditor() {
   const doc = useCurrentDocument();
   const updateContent = useUpdateCurrentContent();
+  const { setViewMode } = useDocumentActions();
+  const { goToLine } = useEditor();
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(() => new Set(['$']));
   const [editingPath, setEditingPath] = useState<string | null>(null);
   const [selectedPath, setSelectedPath] = useState<string | null>('$');
   const [arrayPageMap, setArrayPageMap] = useState<Map<string, number>>(() => new Map());
   const { isOpen, x, y, items, openMenu, closeMenu } = useContextMenu();
+  const { state: searchState, closeSearch, openSearch } = useSearch();
   const containerRef = useRef<HTMLDivElement>(null);
   const nodeRefs = useRef<Map<string, HTMLDivElement>>(new Map());
-  
+
   const content = doc?.content ?? '{}';
   
   // Parse the JSON content
@@ -749,7 +773,41 @@ export function TreeEditor() {
   const handleCancelEdit = useCallback(() => {
     setEditingPath(null);
   }, []);
-  
+
+  const handleJumpToTextEditor = useCallback(() => {
+    if (!selectedPath || !doc || selectedPath === '$') {
+      console.log('Jump to text: Invalid selection', { selectedPath, doc });
+      return;
+    }
+
+    // Convert tree path to JSON pointer
+    const jsonPointer = treePathToJsonPointer(selectedPath);
+    console.log('Jump to text: Path conversion', { selectedPath, jsonPointer });
+
+    // Find the line number for this path
+    let lineNumber = findPathLine(content, jsonPointer);
+    console.log('Jump to text: Line number', { lineNumber, jsonPointer });
+
+    // If we couldn't find the line, try to at least jump to line 1
+    if (lineNumber === null) {
+      console.warn('Jump to text: Could not find line for path, defaulting to line 1', { jsonPointer });
+      lineNumber = 1;
+    }
+
+    if (doc.id) {
+      // Switch to text view
+      setViewMode(doc.id, 'text');
+
+      // Jump to the line
+      setTimeout(() => {
+        console.log('Jump to text: Jumping to line', lineNumber);
+        goToLine(lineNumber, 1);
+      }, 150); // Increased delay to ensure view mode change completes
+    } else {
+      console.log('Jump to text: Failed - no doc.id', { docId: doc.id });
+    }
+  }, [selectedPath, content, doc, setViewMode, goToLine]);
+
   // Keyboard navigation handler
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     // Don't handle keyboard when editing
@@ -859,9 +917,16 @@ export function TreeEditor() {
         }
         break;
       }
+      case 'j': {
+        if ((e.metaKey || e.ctrlKey) && selectedPath) {
+          e.preventDefault();
+          handleJumpToTextEditor();
+        }
+        break;
+      }
     }
-  }, [selectedPath, visiblePaths, expandedPaths, editingPath, parsedValue, handleToggle, handleStartEdit, updateContent]);
-  
+  }, [selectedPath, visiblePaths, expandedPaths, editingPath, parsedValue, handleToggle, handleStartEdit, updateContent, handleJumpToTextEditor]);
+
   const handleContextMenu = useCallback((
     e: React.MouseEvent,
     path: string,
@@ -872,13 +937,21 @@ export function TreeEditor() {
     const isPrimitive = value === null || typeof value !== 'object';
     const isArray = Array.isArray(value);
     const isObject = value !== null && typeof value === 'object' && !Array.isArray(value);
-    
+
     // Get parent to determine if we can duplicate
     const parentPath = getParentPath(path);
     const parentValue = parsedValue ? getValueAtPath(parsedValue, parentPath) : null;
     const canDuplicate = !isRoot && parentValue !== null && typeof parentValue === 'object';
-    
+
     const menuItems: ContextMenuItem[] = [
+      {
+        id: 'jump-to-text',
+        label: 'Jump to Text Editor',
+        icon: <Code size={14} />,
+        shortcut: 'Ctrl+J',
+        onClick: handleJumpToTextEditor,
+      },
+      { id: 'sep0', label: '', separator: true },
       {
         id: 'copy-value',
         label: 'Copy Value',
@@ -983,7 +1056,7 @@ export function TreeEditor() {
     );
     
     openMenu(e, menuItems);
-  }, [parsedValue, updateContent, openMenu, handleStartEdit]);
+  }, [parsedValue, updateContent, openMenu, handleStartEdit, handleJumpToTextEditor]);
   
   const handleExpandAll = useCallback(() => {
     if (!parsedValue) return;
@@ -1032,6 +1105,39 @@ export function TreeEditor() {
     });
     nodeRefs.current.get(path)?.scrollIntoView({ block: 'center' });
   }, []);
+
+  // Handle search/replace (basic text replacement on JSON content)
+  const handleReplace = useCallback((searchText: string, replaceText: string, replaceAll: boolean) => {
+    if (!searchText) return;
+
+    if (replaceAll) {
+      const newContent = content.split(searchText).join(replaceText);
+      updateContent(newContent);
+    } else {
+      // Replace first occurrence
+      const index = content.indexOf(searchText);
+      if (index !== -1) {
+        const newContent = content.substring(0, index) + replaceText + content.substring(index + searchText.length);
+        updateContent(newContent);
+      }
+    }
+  }, [content, updateContent]);
+
+  // Handle keyboard shortcuts for search
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault();
+        openSearch(false);
+      } else if ((e.ctrlKey || e.metaKey) && e.key === 'h') {
+        e.preventDefault();
+        openSearch(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [openSearch]);
   
   if (parseError) {
     return (
@@ -1057,11 +1163,19 @@ export function TreeEditor() {
   
   return (
     <>
-      <div 
+      <div
         ref={containerRef}
-        className="h-full flex flex-col bg-editor-bg focus:outline-none" 
+        className="h-full flex flex-col bg-editor-bg focus:outline-none relative"
         tabIndex={-1}
       >
+        {/* Search Bar */}
+        <SearchBar
+          content={content}
+          isOpen={searchState.isOpen}
+          onClose={closeSearch}
+          onReplace={handleReplace}
+          showReplace={searchState.showReplace}
+        />
         {/* Toolbar */}
         <div className="flex items-center gap-2 px-3 py-1.5 border-b border-border-subtle">
           <button
@@ -1076,15 +1190,29 @@ export function TreeEditor() {
           >
             Collapse All
           </button>
-          
+
           {/* Separator */}
           <div className="w-px h-4 bg-border-subtle mx-1" />
-          
+
+          {/* Jump to Text Editor button */}
+          <button
+            onClick={handleJumpToTextEditor}
+            disabled={!selectedPath || selectedPath === '$'}
+            className="text-xs text-text-secondary hover:text-text-primary px-2 py-1 hover:bg-bg-hover rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+            title="Jump to Text Editor (Ctrl+J)"
+          >
+            <Code className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Jump to Text</span>
+          </button>
+
+          {/* Separator */}
+          <div className="w-px h-4 bg-border-subtle mx-1" />
+
           {/* Breadcrumbs inline */}
           {selectedPath && (
             <Breadcrumbs path={selectedPath} onNavigate={handleBreadcrumbNavigate} />
           )}
-          
+
           <div className="flex-1" />
           <span className="text-xs text-text-muted">
             {visiblePaths.length} nodes
@@ -1121,11 +1249,12 @@ export function TreeEditor() {
         </div>
         
         {/* Keyboard shortcuts hint */}
-        <div className="px-3 py-1 border-t border-border-subtle text-xs text-text-muted flex items-center gap-4">
+        <div className="px-3 py-1 border-t border-border-subtle text-xs text-text-muted flex items-center gap-4 overflow-x-auto">
           <span><kbd className="px-1 py-0.5 bg-bg-surface rounded text-[10px]">Arrow</kbd> Navigate</span>
           <span><kbd className="px-1 py-0.5 bg-bg-surface rounded text-[10px]">Enter</kbd> Edit/Toggle</span>
+          <span><kbd className="px-1 py-0.5 bg-bg-surface rounded text-[10px]">Ctrl+J</kbd> Jump to Text</span>
           <span><kbd className="px-1 py-0.5 bg-bg-surface rounded text-[10px]">Del</kbd> Delete</span>
-          <span><kbd className="px-1 py-0.5 bg-bg-surface rounded text-[10px]">Right-click</kbd> More options</span>
+          <span className="hidden sm:inline"><kbd className="px-1 py-0.5 bg-bg-surface rounded text-[10px]">Right-click</kbd> More options</span>
         </div>
       </div>
       

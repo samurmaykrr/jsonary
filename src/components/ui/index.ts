@@ -11,4 +11,6 @@ export { CompareModal } from './CompareModal';
 export { SchemaValidatorModal } from './SchemaValidatorModal';
 export { RepairPreviewModal } from './RepairPreviewModal';
 export { GoToLineModal } from './GoToLineModal';
+export { CommandPalette, type Command } from './CommandPalette';
+export { commandIcons } from './CommandIcons';
 export { ToastContainer } from './Toast';

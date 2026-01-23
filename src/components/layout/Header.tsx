@@ -33,8 +33,14 @@ import type { ViewMode } from '@/types';
 import { openFile, readFromClipboard, saveFile, fetchFromUrl } from '@/lib/file';
 import { formatJson, parseJson } from '@/lib/json';
 import { parseCsv, stringifyCsv, looksLikeCsv } from '@/lib/csv';
+import { jsonToYaml } from '@/lib/yaml';
+import { jsonToToml } from '@/lib/toml';
+import { jsonToToon } from '@/lib/toon';
+import { generateJsonSchema } from '@/lib/schema/generator';
+import { useBranding } from '@/config/branding';
 
 export function Header() {
+  const branding = useBranding();
   const activeDoc = useActiveDocument();
   const tabs = useTabs();
   const { setViewMode, createDocument, renameDocument, markSaved } = useDocumentActions();
@@ -189,16 +195,16 @@ export function Header() {
   const handleExportCsv = useCallback(async () => {
     setMenuOpen(null);
     if (!activeDoc) return;
-    
+
     const parsed = parseJson(activeDoc.content);
     if (parsed.error || !Array.isArray(parsed.value)) {
       alert('Export to CSV requires the document to contain a JSON array.');
       return;
     }
-    
+
     const csvContent = stringifyCsv(parsed.value);
     const baseName = activeDoc.name.replace(/\.json$/i, '');
-    
+
     const result = await saveFile(csvContent, {
       suggestedName: `${baseName}.csv`,
       types: [{
@@ -206,8 +212,108 @@ export function Header() {
         accept: { 'text/csv': ['.csv'] },
       }],
     });
-    
+
     if (result.success) {
+      // Optionally show success notification
+    }
+  }, [activeDoc]);
+
+  const handleExportYaml = useCallback(async () => {
+    setMenuOpen(null);
+    if (!activeDoc) return;
+
+    const result = jsonToYaml(activeDoc.content);
+    if ('error' in result) {
+      alert(`Failed to export to YAML: ${result.error}`);
+      return;
+    }
+
+    const baseName = activeDoc.name.replace(/\.(json|yaml|yml)$/i, '');
+
+    const saveResult = await saveFile(result.yaml, {
+      suggestedName: `${baseName}.yaml`,
+      types: [{
+        description: 'YAML Files',
+        accept: { 'text/yaml': ['.yaml', '.yml'] },
+      }],
+    });
+
+    if (saveResult.success) {
+      // Optionally show success notification
+    }
+  }, [activeDoc]);
+
+  const handleExportToml = useCallback(async () => {
+    setMenuOpen(null);
+    if (!activeDoc) return;
+
+    const result = jsonToToml(activeDoc.content);
+    if ('error' in result) {
+      alert(`Failed to export to TOML: ${result.error}`);
+      return;
+    }
+
+    const baseName = activeDoc.name.replace(/\.(json|toml)$/i, '');
+
+    const saveResult = await saveFile(result.toml, {
+      suggestedName: `${baseName}.toml`,
+      types: [{
+        description: 'TOML Files',
+        accept: { 'text/toml': ['.toml'] },
+      }],
+    });
+
+    if (saveResult.success) {
+      // Optionally show success notification
+    }
+  }, [activeDoc]);
+
+  const handleExportToon = useCallback(async () => {
+    setMenuOpen(null);
+    if (!activeDoc) return;
+
+    const result = jsonToToon(activeDoc.content);
+    if ('error' in result) {
+      alert(`Failed to export to TOON: ${result.error}`);
+      return;
+    }
+
+    const baseName = activeDoc.name.replace(/\.(json|toon)$/i, '');
+
+    const saveResult = await saveFile(result.toon, {
+      suggestedName: `${baseName}.toon`,
+      types: [{
+        description: 'TOON Files',
+        accept: { 'text/plain': ['.toon'] },
+      }],
+    });
+
+    if (saveResult.success) {
+      // Optionally show success notification
+    }
+  }, [activeDoc]);
+
+  const handleExportSchema = useCallback(async () => {
+    setMenuOpen(null);
+    if (!activeDoc) return;
+
+    const result = generateJsonSchema(activeDoc.content);
+    if ('error' in result) {
+      alert(`Failed to generate JSON Schema: ${result.error}`);
+      return;
+    }
+
+    const baseName = activeDoc.name.replace(/\.json$/i, '');
+
+    const saveResult = await saveFile(result.schema, {
+      suggestedName: `${baseName}.schema.json`,
+      types: [{
+        description: 'JSON Schema Files',
+        accept: { 'application/schema+json': ['.json'] },
+      }],
+    });
+
+    if (saveResult.success) {
       // Optionally show success notification
     }
   }, [activeDoc]);
@@ -223,7 +329,7 @@ export function Header() {
             <div className="w-6 h-6 rounded bg-accent flex items-center justify-center">
               <Code className="w-4 h-4 text-white" weight="bold" />
             </div>
-            <span className="font-semibold text-text-primary hidden sm:inline">Mayson</span>
+            <span className="font-semibold text-text-primary hidden sm:inline">{branding.app.displayName}</span>
           </div>
           
           {/* Desktop Menus */}
@@ -294,6 +400,39 @@ export function Header() {
                     >
                       <FileArrowDown className="w-4 h-4" />
                       Export to CSV...
+                    </button>
+                    <button
+                      onClick={handleExportYaml}
+                      disabled={!activeDoc}
+                      className="w-full px-3 py-1.5 text-sm text-left text-text-secondary hover:text-text-primary hover:bg-bg-hover flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <FileArrowDown className="w-4 h-4" />
+                      Export to YAML...
+                    </button>
+                    <button
+                      onClick={handleExportToml}
+                      disabled={!activeDoc}
+                      className="w-full px-3 py-1.5 text-sm text-left text-text-secondary hover:text-text-primary hover:bg-bg-hover flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <FileArrowDown className="w-4 h-4" />
+                      Export to TOML...
+                    </button>
+                    <button
+                      onClick={handleExportToon}
+                      disabled={!activeDoc}
+                      className="w-full px-3 py-1.5 text-sm text-left text-text-secondary hover:text-text-primary hover:bg-bg-hover flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <FileArrowDown className="w-4 h-4" />
+                      Export to TOON...
+                    </button>
+                    <div className="border-t border-border-subtle my-1" />
+                    <button
+                      onClick={handleExportSchema}
+                      disabled={!activeDoc}
+                      className="w-full px-3 py-1.5 text-sm text-left text-text-secondary hover:text-text-primary hover:bg-bg-hover flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <FileArrowDown className="w-4 h-4" />
+                      Generate JSON Schema...
                     </button>
                   </div>
                 </>
@@ -518,7 +657,7 @@ export function Header() {
                 <div className="w-6 h-6 rounded bg-accent flex items-center justify-center">
                   <Code className="w-4 h-4 text-white" weight="bold" />
                 </div>
-                <span className="font-semibold text-text-primary">Mayson</span>
+                <span className="font-semibold text-text-primary">{branding.app.displayName}</span>
               </div>
               <button
                 onClick={() => setMobileMenuOpen(false)}
