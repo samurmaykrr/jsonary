@@ -1,4 +1,4 @@
-# Mayson Editor - Development Commands
+# Jsonary - Development Commands
 
 # Default recipe: show available commands
 default:

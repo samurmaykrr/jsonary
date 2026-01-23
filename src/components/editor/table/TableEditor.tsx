@@ -10,18 +10,23 @@ import {
   type Row,
 } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { 
-  CaretUp, 
-  CaretDown, 
-  Plus, 
-  Trash, 
+import {
+  CaretUp,
+  CaretDown,
+  Plus,
+  Trash,
   CopySimple,
   DotsThreeVertical,
+  Code,
 } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import { parseJson, formatJson } from '@/lib/json';
-import { useCurrentDocument, useUpdateCurrentContent } from '@/store/useDocumentStore';
+import { findPathLine } from '@/lib/json/validator';
+import { useCurrentDocument, useUpdateCurrentContent, useDocumentActions } from '@/store/useDocumentStore';
+import { useSearch } from '@/store/useSearchStore';
+import { useEditor } from '@/store/useEditorStore';
 import { InlineEditor, ContextMenu, useContextMenu, type ContextMenuItem } from '@/components/ui';
+import { SearchBar } from '@/components/editor/search/SearchBar';
 import type { JsonValue, JsonObject } from '@/types';
 
 // Row height for virtualization
@@ -36,18 +41,22 @@ export function TableEditor() {
   const doc = useCurrentDocument();
   const content = doc?.content ?? '[]';
   const updateContent = useUpdateCurrentContent();
-  
+  const { setViewMode } = useDocumentActions();
+  const { goToLine } = useEditor();
+  const { state: searchState, closeSearch, openSearch } = useSearch();
+
   const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [selectedRowIndex, setSelectedRowIndex] = useState<number | null>(null);
+  const [selectedColumnId, setSelectedColumnId] = useState<string | null>(null);
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>({});
   const [resizingColumn, setResizingColumn] = useState<string | null>(null);
   const [resizeStartX, setResizeStartX] = useState(0);
   const [resizeStartWidth, setResizeStartWidth] = useState(0);
-  
+
   const containerRef = useRef<HTMLDivElement>(null);
   const tableContainerRef = useRef<HTMLDivElement>(null);
-  
+
   const { isOpen, x, y, items, openMenu, closeMenu } = useContextMenu();
   
   // Parse the JSON content
@@ -153,11 +162,56 @@ export function TableEditor() {
   }, [parsedValue, updateContent]);
   
   // Context menu for rows
+  const handleJumpToTextEditor = useCallback((rowIndex?: number, columnId?: string) => {
+    if (!doc) return;
+
+    const targetRowIndex = rowIndex ?? selectedRowIndex;
+    const targetColumnId = columnId ?? selectedColumnId;
+
+    if (targetRowIndex === null) {
+      console.log('Jump to text: No row selected');
+      return;
+    }
+
+    // Build JSON pointer path
+    let jsonPointer = `/${targetRowIndex}`;
+    if (targetColumnId) {
+      jsonPointer += `/${targetColumnId}`;
+    }
+
+    console.log('Jump to text: Path conversion', { rowIndex: targetRowIndex, columnId: targetColumnId, jsonPointer });
+
+    // Find the line number for this path
+    const lineNumber = findPathLine(content, jsonPointer);
+    console.log('Jump to text: Line number', { lineNumber, jsonPointer });
+
+    if (lineNumber !== null && doc.id) {
+      // Switch to text view
+      setViewMode(doc.id, 'text');
+
+      // Jump to the line
+      setTimeout(() => {
+        console.log('Jump to text: Jumping to line', lineNumber);
+        goToLine(lineNumber, 1);
+      }, 100); // Small delay to ensure view mode change completes
+    } else {
+      console.log('Jump to text: Failed - lineNumber is null or no doc.id', { lineNumber, docId: doc.id });
+    }
+  }, [selectedRowIndex, selectedColumnId, content, doc, setViewMode, goToLine]);
+
   const handleRowContextMenu = useCallback((e: React.MouseEvent, rowIndex: number) => {
     e.preventDefault();
     setSelectedRowIndex(rowIndex);
-    
+
     const menuItems: ContextMenuItem[] = [
+      {
+        id: 'jump-to-text',
+        label: 'Jump to Text Editor',
+        icon: <Code size={14} />,
+        shortcut: 'Ctrl+J',
+        onClick: () => handleJumpToTextEditor(rowIndex),
+      },
+      { id: 'sep0', label: '', separator: true },
       {
         id: 'add-row-above',
         label: 'Insert Row Above',
@@ -188,7 +242,7 @@ export function TableEditor() {
     ];
     
     openMenu(e, menuItems);
-  }, [handleAddRow, handleDuplicateRow, handleDeleteRow, openMenu]);
+  }, [handleAddRow, handleDuplicateRow, handleDeleteRow, handleJumpToTextEditor, openMenu]);
   
   // Column resize handlers
   const handleResizeStart = useCallback((e: React.MouseEvent, columnId: string, currentWidth: number) => {
@@ -337,11 +391,44 @@ export function TableEditor() {
   const virtualRows = rowVirtualizer.getVirtualItems();
   const totalSize = rowVirtualizer.getTotalSize();
   
+  // Handle search/replace (basic text replacement on JSON content)
+  const handleReplace = useCallback((searchText: string, replaceText: string, replaceAll: boolean) => {
+    if (!searchText) return;
+
+    if (replaceAll) {
+      const newContent = content.split(searchText).join(replaceText);
+      updateContent(newContent);
+    } else {
+      // Replace first occurrence
+      const index = content.indexOf(searchText);
+      if (index !== -1) {
+        const newContent = content.substring(0, index) + replaceText + content.substring(index + searchText.length);
+        updateContent(newContent);
+      }
+    }
+  }, [content, updateContent]);
+
+  // Handle keyboard shortcuts for search
+  useEffect(() => {
+    const handleSearchKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault();
+        openSearch(false);
+      } else if ((e.ctrlKey || e.metaKey) && e.key === 'h') {
+        e.preventDefault();
+        openSearch(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleSearchKeyDown);
+    return () => window.removeEventListener('keydown', handleSearchKeyDown);
+  }, [openSearch]);
+
   // Keyboard navigation
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-    
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (editingCell) return;
       
@@ -353,6 +440,12 @@ export function TableEditor() {
       let newIndex = selectedRowIndex ?? -1;
       
       switch (e.key) {
+        case 'j':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            handleJumpToTextEditor();
+          }
+          break;
         case 'ArrowDown':
           e.preventDefault();
           newIndex = Math.min(rowCount - 1, (selectedRowIndex ?? -1) + 1);
@@ -412,7 +505,7 @@ export function TableEditor() {
     
     container.addEventListener('keydown', handleKeyDown);
     return () => container.removeEventListener('keydown', handleKeyDown);
-  }, [selectedRowIndex, rows, editingCell, handleDeleteRow, dataColumns, isEditable, rowVirtualizer]);
+  }, [selectedRowIndex, rows, editingCell, handleDeleteRow, dataColumns, isEditable, rowVirtualizer, handleJumpToTextEditor]);
   
   // Error state
   if (parseError) {
@@ -445,16 +538,33 @@ export function TableEditor() {
   
   return (
     <>
-      <div 
+      <div
         ref={containerRef}
-        className="h-full flex flex-col bg-editor-bg focus:outline-none" 
+        className="h-full flex flex-col bg-editor-bg focus:outline-none relative"
         tabIndex={0}
       >
+        {/* Search Bar */}
+        <SearchBar
+          content={content}
+          isOpen={searchState.isOpen}
+          onClose={closeSearch}
+          onReplace={handleReplace}
+          showReplace={searchState.showReplace}
+        />
         {/* Toolbar */}
         <div className="flex items-center gap-4 px-3 py-1.5 border-b border-border-subtle text-xs flex-shrink-0">
           <span className="text-text-tertiary">{dataRows.length} rows</span>
           <span className="text-text-tertiary">{dataColumns.length} columns</span>
           <div className="flex-1" />
+          <button
+            onClick={() => handleJumpToTextEditor()}
+            disabled={selectedRowIndex === null}
+            className="flex items-center gap-1 px-2 py-1 text-text-secondary hover:text-text-primary hover:bg-bg-hover rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Jump to Text Editor (Ctrl+J)"
+          >
+            <Code className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Jump to Text</span>
+          </button>
           <button
             onClick={() => handleAddRow()}
             className="flex items-center gap-1 px-2 py-1 text-text-secondary hover:text-text-primary hover:bg-bg-hover rounded transition-colors"
@@ -572,6 +682,12 @@ export function TableEditor() {
                             width: cell.column.getSize(),
                             minWidth: cell.column.getSize(),
                             maxWidth: cell.column.id.startsWith('__') ? cell.column.getSize() : undefined,
+                          }}
+                          onClick={() => {
+                            if (isDataColumn) {
+                              setSelectedRowIndex(originalIndex);
+                              setSelectedColumnId(cell.column.id);
+                            }
                           }}
                           onDoubleClick={() => {
                             if (isDataColumn && isEditable(cell.getValue() as JsonValue)) {

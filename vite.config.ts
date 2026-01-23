@@ -4,9 +4,15 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import million from 'million/compiler'
 import path from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // https://vite.dev/config/
 export default defineConfig({
+  define: {
+    global: 'globalThis',
+  },
   test: {
     globals: true,
     environment: 'jsdom',
@@ -26,8 +32,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icon.svg'],
       manifest: {
-        name: 'Mayson Editor',
-        short_name: 'Mayson',
+        name: 'Jsonary',
+        short_name: 'Jsonary',
         description: 'A powerful JSON editor with text, tree, and table views',
         theme_color: '#0f0f11',
         background_color: '#0f0f11',

@@ -26,7 +26,9 @@ import { TableEditor } from '@/components/editor/table/TableEditor';
 import { EditorToolbar } from '@/components/editor/EditorToolbar';
 import { SettingsModal, ToastContainer } from '@/components/ui';
 import { GoToLineModal } from '@/components/ui/GoToLineModal';
-import { useEditorShortcuts } from '@/hooks';
+import { CommandPalette, type Command } from '@/components/ui/CommandPalette';
+import { commandIcons } from '@/components/ui/CommandIcons';
+import { useEditorShortcuts, useKeyboardShortcuts } from '@/hooks';
 import { formatJson, compactJson } from '@/lib/json';
 import { openFile, saveFile } from '@/lib/file';
 import { cn } from '@/lib/utils';
@@ -315,7 +317,14 @@ function KeyboardShortcutsHandler({ onOpenSettings, onOpenGoToLine }: { onOpenSe
 function AppContent() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [goToLineOpen, setGoToLineOpen] = useState(false);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const doc = useActiveDocument();
+  const activeDocId = useActiveDocumentId();
+  const { createDocument, closeDocument, renameDocument, markSaved, setViewMode } = useDocumentActions();
+  const updateContent = useUpdateActiveContent();
+  const { undo, redo } = useUndoRedo();
+  const { openSearch } = useSearch();
+  const { toggleTheme } = useTheme();
   const { goToLine } = useEditor();
   
   // Calculate max line for GoToLineModal
@@ -324,6 +333,233 @@ function AppContent() {
   const handleGoToLine = useCallback((line: number) => {
     goToLine(line, 1);
   }, [goToLine]);
+
+  // Command palette shortcut (Cmd/Ctrl+K)
+  useKeyboardShortcuts([{
+    key: 'k',
+    ctrl: true,
+    action: () => setCommandPaletteOpen(true),
+    description: 'Open Command Palette',
+  }]);
+
+  // Define all available commands
+  const commands: Command[] = [
+    // File operations
+    {
+      id: 'file.new',
+      label: 'New Document',
+      description: 'Create a new document',
+      category: 'File',
+      icon: commandIcons.new,
+      shortcut: 'Ctrl+N',
+      action: () => createDocument(),
+      keywords: ['create', 'tab'],
+    },
+    {
+      id: 'file.open',
+      label: 'Open File',
+      description: 'Open a file from your computer',
+      category: 'File',
+      icon: commandIcons.openFile,
+      shortcut: 'Ctrl+O',
+      action: async () => {
+        const result = await openFile();
+        if (result) {
+          createDocument(result.name, result.content);
+        }
+      },
+      keywords: ['load', 'import'],
+    },
+    {
+      id: 'file.save',
+      label: 'Save File',
+      description: 'Save the current document',
+      category: 'File',
+      icon: commandIcons.save,
+      shortcut: 'Ctrl+S',
+      action: async () => {
+        if (!doc) return;
+        const content = formatJson(doc.content) ?? doc.content;
+        const result = await saveFile(content, {
+          suggestedName: doc.name.endsWith('.json') ? doc.name : `${doc.name}.json`,
+        });
+        if (result.success) {
+          if (result.name) {
+            renameDocument(doc.id, result.name);
+          }
+          markSaved(doc.id);
+        }
+      },
+      keywords: ['export', 'download'],
+    },
+    {
+      id: 'file.close',
+      label: 'Close Document',
+      description: 'Close the active document',
+      category: 'File',
+      icon: commandIcons.close,
+      shortcut: 'Ctrl+W',
+      action: () => {
+        if (activeDocId) {
+          closeDocument(activeDocId);
+        }
+      },
+      keywords: ['close', 'tab'],
+    },
+
+    // Edit operations
+    {
+      id: 'edit.undo',
+      label: 'Undo',
+      description: 'Undo the last change',
+      category: 'Edit',
+      icon: commandIcons.undo,
+      shortcut: 'Ctrl+Z',
+      action: () => undo(),
+    },
+    {
+      id: 'edit.redo',
+      label: 'Redo',
+      description: 'Redo the last undone change',
+      category: 'Edit',
+      icon: commandIcons.redo,
+      shortcut: 'Ctrl+Y',
+      action: () => redo(),
+    },
+    {
+      id: 'edit.find',
+      label: 'Find',
+      description: 'Search in the current document',
+      category: 'Edit',
+      icon: commandIcons.search,
+      shortcut: 'Ctrl+F',
+      action: () => openSearch(false),
+      keywords: ['search'],
+    },
+    {
+      id: 'edit.replace',
+      label: 'Find and Replace',
+      description: 'Search and replace in the current document',
+      category: 'Edit',
+      icon: commandIcons.search,
+      shortcut: 'Ctrl+H',
+      action: () => openSearch(true),
+      keywords: ['search', 'substitute'],
+    },
+
+    // Format operations
+    {
+      id: 'format.format',
+      label: 'Format JSON',
+      description: 'Pretty-print the current JSON',
+      category: 'Format',
+      icon: commandIcons.format,
+      shortcut: 'Ctrl+Shift+F',
+      action: () => {
+        if (doc?.content) {
+          const formatted = formatJson(doc.content);
+          if (formatted !== null) {
+            updateContent(formatted);
+          }
+        }
+      },
+      keywords: ['prettify', 'beautify', 'indent'],
+    },
+    {
+      id: 'format.compact',
+      label: 'Compact JSON',
+      description: 'Minify the current JSON',
+      category: 'Format',
+      icon: commandIcons.compact,
+      shortcut: 'Ctrl+Shift+M',
+      action: () => {
+        if (doc?.content) {
+          const compacted = compactJson(doc.content);
+          if (compacted !== null) {
+            updateContent(compacted);
+          }
+        }
+      },
+      keywords: ['minify', 'compress'],
+    },
+
+    // View operations
+    {
+      id: 'view.text',
+      label: 'Text View',
+      description: 'Switch to text editor view',
+      category: 'View',
+      icon: commandIcons.viewText,
+      shortcut: 'Ctrl+1',
+      action: () => {
+        if (activeDocId) {
+          setViewMode(activeDocId, 'text');
+        }
+      },
+      keywords: ['code', 'editor'],
+    },
+    {
+      id: 'view.tree',
+      label: 'Tree View',
+      description: 'Switch to tree view',
+      category: 'View',
+      icon: commandIcons.viewTree,
+      shortcut: 'Ctrl+2',
+      action: () => {
+        if (activeDocId) {
+          setViewMode(activeDocId, 'tree');
+        }
+      },
+      keywords: ['hierarchy', 'outline'],
+    },
+    {
+      id: 'view.table',
+      label: 'Table View',
+      description: 'Switch to table view',
+      category: 'View',
+      icon: commandIcons.viewTable,
+      shortcut: 'Ctrl+3',
+      action: () => {
+        if (activeDocId) {
+          setViewMode(activeDocId, 'table');
+        }
+      },
+      keywords: ['grid', 'spreadsheet'],
+    },
+
+    // Navigation
+    {
+      id: 'nav.goToLine',
+      label: 'Go to Line',
+      description: 'Jump to a specific line number',
+      category: 'Navigation',
+      shortcut: 'Ctrl+G',
+      action: () => setGoToLineOpen(true),
+      keywords: ['jump', 'line'],
+    },
+
+    // Settings
+    {
+      id: 'settings.open',
+      label: 'Open Settings',
+      description: 'Open the settings modal',
+      category: 'Settings',
+      icon: commandIcons.settings,
+      shortcut: 'Ctrl+,',
+      action: () => setSettingsOpen(true),
+      keywords: ['preferences', 'config'],
+    },
+    {
+      id: 'settings.toggleTheme',
+      label: 'Toggle Theme',
+      description: 'Switch between light and dark themes',
+      category: 'Settings',
+      icon: commandIcons.themeDark,
+      shortcut: 'Ctrl+Shift+D',
+      action: () => toggleTheme(),
+      keywords: ['dark', 'light', 'appearance'],
+    },
+  ];
   
   return (
     <div className="h-screen flex flex-col bg-bg-base">
@@ -343,11 +579,18 @@ function AppContent() {
       <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
       
       {/* Go to Line Modal (can be triggered by Ctrl+G) */}
-      <GoToLineModal 
-        isOpen={goToLineOpen} 
-        onClose={() => setGoToLineOpen(false)} 
+      <GoToLineModal
+        isOpen={goToLineOpen}
+        onClose={() => setGoToLineOpen(false)}
         onGoToLine={handleGoToLine}
         maxLine={maxLine}
+      />
+
+      {/* Command Palette (can be triggered by Ctrl+K) */}
+      <CommandPalette
+        isOpen={commandPaletteOpen}
+        onClose={() => setCommandPaletteOpen(false)}
+        commands={commands}
       />
     </div>
   );

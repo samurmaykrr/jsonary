@@ -3,6 +3,7 @@ import { useActiveDocument } from '@/store/useDocumentStore';
 import { useEditor } from '@/store/useEditorStore';
 import { CheckCircle, XCircle, Warning, FileJs } from '@phosphor-icons/react';
 import { Tooltip } from '@/components/ui/Tooltip';
+import { useBranding } from '@/config/branding';
 
 /**
  * Calculate document statistics
@@ -60,9 +61,10 @@ function useJsonStats(content: string) {
 }
 
 export function StatusBar() {
+  const branding = useBranding();
   const doc = useActiveDocument();
   const { goToError } = useEditor();
-  
+
   const content = doc?.content ?? '';
   const { lines, chars, size } = useDocumentStats(content);
   const { isValid } = useJsonStats(content);
@@ -167,6 +169,19 @@ export function StatusBar() {
         
         {/* Encoding - hidden on mobile */}
         <span className="hidden sm:inline">UTF-8</span>
+        
+        {/* Separator */}
+        <div className="w-px h-3 bg-border-default" />
+        
+        {/* Built by credit */}
+        <a
+          href={branding.app.author.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-text-tertiary hover:text-text-secondary transition-colors"
+        >
+          Built by <span className="hidden sm:inline">{branding.app.author.displayName}</span><span className="sm:hidden">@{branding.app.author.name}</span>
+        </a>
       </div>
     </footer>
   );

@@ -67,7 +67,7 @@ function settingsReducer(state: SettingsState, action: SettingsAction): Settings
 // Storage
 // ============================================
 
-const SETTINGS_KEY = 'mayson-settings';
+const SETTINGS_KEY = 'jsonary-settings';
 
 function loadSettings(): SettingsState {
   try {

@@ -9,7 +9,7 @@ import { useEditor } from '@/store/useEditorStore';
 import { useEditorSettings, useUISettings } from '@/store/useSettingsStore';
 
 // Custom dark theme matching our design system
-const MAYSON_DARK_THEME: editor.IStandaloneThemeData = {
+const JSONARY_DARK_THEME: editor.IStandaloneThemeData = {
   base: 'vs-dark',
   inherit: false,
   rules: [
@@ -143,7 +143,7 @@ const MAYSON_DARK_THEME: editor.IStandaloneThemeData = {
 };
 
 // Custom light theme matching our design system
-const MAYSON_LIGHT_THEME: editor.IStandaloneThemeData = {
+const JSONARY_LIGHT_THEME: editor.IStandaloneThemeData = {
   base: 'vs',
   inherit: false,
   rules: [
@@ -282,8 +282,8 @@ let themesInitialized = false;
 // Initialize themes before Monaco loads
 loader.init().then((monaco) => {
   if (!themesInitialized) {
-    monaco.editor.defineTheme('mayson-dark', MAYSON_DARK_THEME);
-    monaco.editor.defineTheme('mayson-light', MAYSON_LIGHT_THEME);
+    monaco.editor.defineTheme('jsonary-dark', JSONARY_DARK_THEME);
+    monaco.editor.defineTheme('jsonary-light', JSONARY_LIGHT_THEME);
     themesInitialized = true;
   }
 });
@@ -302,6 +302,7 @@ export function TextEditor() {
   const [isEditorReady, setIsEditorReady] = useState(false);
 
   const content = doc?.content ?? '';
+  const isTextMode = doc?.viewMode === 'text';
 
   // Parse JSON to detect errors
   const parseResult = parseJson(content);
@@ -310,9 +311,9 @@ export function TextEditor() {
   // Determine theme based on UI settings
   const getThemeName = useCallback(() => {
     if (uiSettings.theme === 'system') {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'mayson-dark' : 'mayson-light';
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'jsonary-dark' : 'jsonary-light';
     }
-    return uiSettings.theme === 'dark' ? 'mayson-dark' : 'mayson-light';
+    return uiSettings.theme === 'dark' ? 'jsonary-dark' : 'jsonary-light';
   }, [uiSettings.theme]);
 
   // Handle editor mount
@@ -323,8 +324,8 @@ export function TextEditor() {
 
     // Ensure themes are defined (in case loader.init didn't complete before mount)
     if (!themesInitialized) {
-      monaco.editor.defineTheme('mayson-dark', MAYSON_DARK_THEME);
-      monaco.editor.defineTheme('mayson-light', MAYSON_LIGHT_THEME);
+      monaco.editor.defineTheme('jsonary-dark', JSONARY_DARK_THEME);
+      monaco.editor.defineTheme('jsonary-light', JSONARY_LIGHT_THEME);
       themesInitialized = true;
     }
 
@@ -424,13 +425,14 @@ export function TextEditor() {
   }, [editorState.pendingEvent, jsonError, clearEvent]);
 
   // Handle search state - use Monaco's built-in find widget
+  // Only respond to search when in text mode
   useEffect(() => {
-    if (!editorRef.current) return;
+    if (!editorRef.current || !isTextMode) return;
     const editor = editorRef.current;
 
     if (searchState.isOpen) {
       // Trigger Monaco's find action
-      const action = searchState.showReplace 
+      const action = searchState.showReplace
         ? editor.getAction('editor.action.startFindReplaceAction')
         : editor.getAction('editor.action.startFindReplaceAction');
       action?.run();
@@ -438,7 +440,15 @@ export function TextEditor() {
       // Close find widget
       editor.trigger('keyboard', 'closeFindWidget', null);
     }
-  }, [searchState.isOpen, searchState.showReplace]);
+  }, [searchState.isOpen, searchState.showReplace, isTextMode]);
+
+  // Close search when switching away from text mode
+  useEffect(() => {
+    if (!isTextMode && searchState.isOpen && editorRef.current) {
+      // Close Monaco's find widget
+      editorRef.current.trigger('keyboard', 'closeFindWidget', null);
+    }
+  }, [isTextMode, searchState.isOpen]);
 
   return (
     <div className="h-full w-full">
