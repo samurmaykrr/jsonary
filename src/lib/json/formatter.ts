@@ -182,6 +182,20 @@ export function formatJson(input: string, options: FormatOptions = {}): string {
       const repaired = repairJson(input, { preserveTemplates });
       
       if (!repaired.error) {
+        // Check if repair just added quotes around a plain string (not useful repair)
+        // This happens when repairJson receives something like 'not json' 
+        // and converts it to '"not json"'
+        try {
+          const parsed = JSON.parse(repaired.output);
+          // If the repaired output is a primitive string that equals the input,
+          // it means we just wrapped the input in quotes - not a useful repair
+          if (typeof parsed === 'string' && parsed === input) {
+            return input;
+          }
+        } catch {
+          // Failed to parse repaired output, continue with formatting
+        }
+        
         // Successfully repaired, now format the repaired JSON
         return formatJson(repaired.output, { ...options, autoRepair: false });
       }
