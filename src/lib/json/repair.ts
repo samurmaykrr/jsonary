@@ -45,14 +45,23 @@
  *    ✓ Hexadecimal: 0xFF → string
  *    ✓ NaN/Infinity → strings
  *
+ * 7. TEMPLATE SYNTAX PRESERVATION
+ *    ✓ Jinja2: {{ variable }}, {% statement %}, {# comment #}
+ *    ✓ Handlebars: {{variable}}, {{#each}}...{{/each}}
+ *    ✓ Mustache: {{variable}}, {{#section}}...{{/section}}
+ *    ✓ Template strings are preserved during repair and formatting
+ *
  * ARCHITECTURE:
  *
  * Repair Pipeline:
- *   Input → Unescape Stringified → Wrap Multiple Objects → jsonrepair → Output
+ *   Input → Extract Templates → Unescape Stringified → Wrap Multiple Objects → 
+ *   jsonrepair → Restore Templates → Output
  *
- * 1. unescapeStringifiedJson() - Detects and unescapes double-escaped JSON
- * 2. fixMultipleObjects() - Wraps multiple root objects in an array
- * 3. jsonrepair() - Applies 25+ general repair patterns
+ * 1. extractTemplates() - Temporarily replaces template syntax with placeholders
+ * 2. unescapeStringifiedJson() - Detects and unescapes double-escaped JSON
+ * 3. fixMultipleObjects() - Wraps multiple root objects in an array
+ * 4. jsonrepair() - Applies 25+ general repair patterns
+ * 5. restoreTemplates() - Puts template syntax back into the output
  *
  * Each stage is optional and configurable via RepairOptions.
  *
@@ -65,11 +74,17 @@
  *   console.log(result.output); // Fixed JSON
  * }
  *
+ * // With template syntax preservation
+ * const result = repairJson(brokenJson, {
+ *   preserveTemplates: true
+ * });
+ *
  * // With options and change tracking
  * const result = repairJson(brokenJson, {
  *   unescapeStringified: true,
  *   wrapMultipleObjects: true,
- *   trackChanges: true
+ *   trackChanges: true,
+ *   preserveTemplates: true
  * });
  *
  * console.log(result.changes); // List of repairs made
@@ -83,9 +98,10 @@
  * ```
  *
  * TESTING:
- * - 55 comprehensive test cases in tests/lib/json/repair.test.ts
+ * - 55+ comprehensive test cases in tests/lib/json/repair.test.ts
  * - Covers all 30+ repair patterns
  * - Tests for options, suggestions, and diagnostics APIs
+ * - Tests for template syntax preservation
  *
  * DEPENDENCIES:
  * - jsonrepair@3.13.1 - Core repair engine with streaming support
@@ -116,7 +132,7 @@ export interface RepairResult {
  * Describes a change made during repair
  */
 export interface RepairChange {
-  type: 'unescaped_stringified' | 'wrapped_multiple_objects' | 'general_repair';
+  type: 'unescaped_stringified' | 'wrapped_multiple_objects' | 'general_repair' | 'preserved_templates';
   description: string;
 }
 
@@ -141,6 +157,140 @@ export interface RepairOptions {
    * @default false
    */
   trackChanges?: boolean;
+
+  /**
+   * Whether to preserve template syntax (Jinja2, Handlebars, Mustache, etc.)
+   * When enabled, template expressions like {{ variable }} are temporarily
+   * replaced with placeholders during repair, then restored afterward.
+   * @default true
+   */
+  preserveTemplates?: boolean;
+}
+
+/**
+ * Template placeholder tracking information
+ */
+interface TemplatePlaceholder {
+  placeholder: string;
+  original: string;
+}
+
+/**
+ * Regular expressions for detecting template syntax patterns
+ * 
+ * Supported template engines:
+ * - Jinja2: {{ variable }}, {% statement %}, {# comment #}
+ * - Handlebars: {{variable}}, {{#helper}}, {{!-- comment --}}
+ * - Mustache: {{variable}}, {{#section}}, {{!comment}}
+ */
+const TEMPLATE_PATTERNS = [
+  // Jinja2 variable: {{ variable }}, {{ obj.attr }}, {{ func() }}
+  /\{\{\s*[^}]+\s*\}\}/g,
+  
+  // Jinja2 statement: {% if %}, {% for %}, {% block %}, etc.
+  /\{%\s*[^%]+\s*%\}/g,
+  
+  // Jinja2 comment: {# comment #}
+  /\{#\s*[^#]*\s*#\}/g,
+  
+  // Handlebars/Mustache comment: {{! comment }} or {{!-- comment --}}
+  /\{\{!--[\s\S]*?--\}\}/g,
+  /\{\{![^}]*\}\}/g,
+];
+
+/**
+ * Extract template syntax and replace with placeholders
+ * 
+ * This function identifies template expressions (Jinja2, Handlebars, Mustache)
+ * and replaces them with unique placeholders that are safe for JSON processing.
+ * The original expressions are stored in a map for later restoration.
+ * 
+ * We replace template strings inside quotes with a valid JSON string placeholder.
+ * This ensures the JSON remains valid during processing.
+ * 
+ * @param input - The input string containing template syntax
+ * @returns Object containing the processed string and placeholder map
+ * 
+ * @example
+ * const input = '{"name": "{{ user.name }}", "active": true}';
+ * const { processed, placeholders } = extractTemplates(input);
+ * // processed: '{"name": "__TEMPLATE_0__", "active": true}'
+ * // placeholders: [
+ * //   { placeholder: '__TEMPLATE_0__', original: '{{ user.name }}' }
+ * // ]
+ */
+function extractTemplates(input: string): {
+  processed: string;
+  placeholders: TemplatePlaceholder[];
+} {
+  let processed = input;
+  const placeholders: TemplatePlaceholder[] = [];
+  let placeholderIndex = 0;
+
+  // Process each template pattern
+  for (const pattern of TEMPLATE_PATTERNS) {
+    // Create a new regex instance to reset lastIndex
+    const regex = new RegExp(pattern.source, pattern.flags);
+    processed = processed.replace(regex, (match) => {
+      const placeholder = `__TEMPLATE_${placeholderIndex}__`;
+      placeholders.push({
+        placeholder,
+        original: match,
+      });
+      placeholderIndex++;
+      return placeholder;
+    });
+  }
+
+  return { processed, placeholders };
+}
+
+/**
+ * Restore template syntax from placeholders
+ * 
+ * This function replaces placeholders back with their original template expressions.
+ * It's the inverse operation of extractTemplates().
+ * 
+ * @param processed - The string with placeholders
+ * @param placeholders - Array of placeholder mappings
+ * @returns The string with template syntax restored
+ * 
+ * @example
+ * const processed = '{"name": "__TEMPLATE_0__"}';
+ * const placeholders = [{ placeholder: '__TEMPLATE_0__', original: '{{ user.name }}' }];
+ * const restored = restoreTemplates(processed, placeholders);
+ * // restored: '{"name": "{{ user.name }}"}'
+ */
+function restoreTemplates(
+  processed: string,
+  placeholders: TemplatePlaceholder[]
+): string {
+  let result = processed;
+
+  // Restore in reverse order to handle nested placeholders correctly
+  for (let i = placeholders.length - 1; i >= 0; i--) {
+    const { placeholder, original } = placeholders[i]!;
+    // Use a simple replace - placeholders are unique and won't collide
+    result = result.replace(new RegExp(placeholder, 'g'), original);
+  }
+
+  return result;
+}
+
+/**
+ * Check if input contains template syntax
+ * 
+ * Note: We create fresh regex instances to avoid issues with global flag state
+ * 
+ * @param input - The string to check
+ * @returns True if template syntax is detected
+ */
+function hasTemplateSyntax(input: string): boolean {
+  return TEMPLATE_PATTERNS.some((pattern) => {
+    // Create a fresh regex instance to avoid lastIndex issues with global flag
+    const regex = new RegExp(pattern.source, pattern.flags);
+    return regex.test(input);
+  });
 }
 
 /**
@@ -407,10 +557,26 @@ export function repairJson(input: string, options?: RepairOptions): RepairResult
     unescapeStringified: options?.unescapeStringified ?? true,
     wrapMultipleObjects: options?.wrapMultipleObjects ?? true,
     trackChanges: options?.trackChanges ?? false,
+    preserveTemplates: options?.preserveTemplates ?? true,
   };
 
   let preprocessed = input;
   const changes: RepairChange[] = [];
+  let templatePlaceholders: TemplatePlaceholder[] = [];
+
+  // Extract template syntax before repair if preserveTemplates is enabled
+  if (opts.preserveTemplates && hasTemplateSyntax(preprocessed)) {
+    const { processed, placeholders } = extractTemplates(preprocessed);
+    preprocessed = processed;
+    templatePlaceholders = placeholders;
+    
+    if (opts.trackChanges && placeholders.length > 0) {
+      changes.push({
+        type: 'preserved_templates',
+        description: `Preserved ${placeholders.length} template expression(s) during repair`,
+      });
+    }
+  }
 
   // Try to detect and fix stringified JSON (e.g., "{\\"key\\":\\"value\\"}")
   if (opts.unescapeStringified) {
@@ -426,12 +592,19 @@ export function repairJson(input: string, options?: RepairOptions): RepairResult
     }
   }
 
-  // Check if it's already valid after unescaping
+  // Check if it's already valid after unescaping (and before template restoration)
   try {
     JSON.parse(preprocessed);
+    
+    // Restore templates if they were extracted
+    let finalOutput = preprocessed;
+    if (opts.preserveTemplates && templatePlaceholders.length > 0) {
+      finalOutput = restoreTemplates(preprocessed, templatePlaceholders);
+    }
+    
     return {
-      output: preprocessed,
-      wasRepaired: preprocessed !== input,
+      output: finalOutput,
+      wasRepaired: finalOutput !== input,
       error: null,
       changes: opts.trackChanges ? changes : undefined,
     };
@@ -464,15 +637,27 @@ export function repairJson(input: string, options?: RepairOptions): RepairResult
       });
     }
 
+    // Restore templates if they were extracted
+    let finalOutput = output;
+    if (opts.preserveTemplates && templatePlaceholders.length > 0) {
+      finalOutput = restoreTemplates(output, templatePlaceholders);
+    }
+
     return {
-      output,
-      wasRepaired: output !== input,
+      output: finalOutput,
+      wasRepaired: finalOutput !== input,
       error: null,
       changes: opts.trackChanges ? changes : undefined,
     };
   } catch (e) {
+    // Restore templates even on error
+    let finalOutput = input;
+    if (opts.preserveTemplates && templatePlaceholders.length > 0) {
+      finalOutput = restoreTemplates(input, templatePlaceholders);
+    }
+    
     return {
-      output: input,
+      output: finalOutput,
       wasRepaired: false,
       error: e instanceof Error ? e.message : 'Unknown repair error',
       changes: opts.trackChanges ? changes : undefined,
