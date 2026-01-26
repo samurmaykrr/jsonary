@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { CaretRight } from '@phosphor-icons/react';
+import { CaretRight, MagnifyingGlass } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 
 export interface Command {
@@ -78,17 +78,10 @@ export function CommandPalette({ isOpen, onClose, commands }: CommandPaletteProp
     }));
   }, [filteredCommands]);
 
-  // Reset selected index when search changes
-  useEffect(() => {
-    setSelectedIndex(0);
-  }, [search]);
-
   // Focus input when opened
   useEffect(() => {
     if (isOpen) {
       inputRef.current?.focus();
-      setSearch('');
-      setSelectedIndex(0);
     }
   }, [isOpen]);
 
@@ -163,7 +156,23 @@ export function CommandPalette({ isOpen, onClose, commands }: CommandPaletteProp
     onClose();
   }, [onClose]);
 
-  if (!isOpen) return null;
+  // Handle search change - reset selected index and update search
+  const handleSearchChange = useCallback((value: string) => {
+    setSearch(value);
+    setSelectedIndex(0);
+  }, []);
+
+  // Reset state when modal opens/closes
+  if (!isOpen) {
+    // Reset state when closed (outside of render cycle)
+    if (search !== '' || selectedIndex !== 0) {
+      setTimeout(() => {
+        setSearch('');
+        setSelectedIndex(0);
+      }, 200); // Wait for close animation
+    }
+    return null;
+  }
 
   let commandIndex = 0;
 
@@ -196,7 +205,7 @@ export function CommandPalette({ isOpen, onClose, commands }: CommandPaletteProp
             type="text"
             placeholder="Type a command or search..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="flex-1 bg-transparent border-none outline-none text-sm text-text-primary placeholder:text-text-muted"
           />
           <kbd className="hidden sm:inline-flex px-2 py-1 text-xs font-mono text-text-muted bg-bg-surface border border-border-subtle rounded">
