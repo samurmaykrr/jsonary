@@ -1,12 +1,20 @@
 # Jsonary
 
-A feature-rich, browser-based JSON editor built with React and TypeScript. Provides a professional-grade editing experience with multiple view modes, advanced formatting tools, and robust state management.
+A feature-rich, browser-based JSON editor built with React and TypeScript. Edit JSON with multiple view modes, powerful tools, and a modern interface.
+
+![Text Editor](images/text-editor.png)
 
 ## Features
 
 ### Multi-View Editing
 - **Text Editor** - Full-featured code editor with syntax highlighting, code folding, line numbers, search/replace, and virtualization for large files
+
+![Tree View](images/tree-view.png)
+
 - **Tree Editor** - Hierarchical tree view with inline editing, expand/collapse, breadcrumb navigation, and keyboard navigation
+
+![Table View](images/table-view.png)
+
 - **Table Editor** - Spreadsheet-like view for arrays of objects with sorting, column resizing, and row operations
 
 ### Multi-Document Support
