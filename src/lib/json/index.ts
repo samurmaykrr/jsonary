@@ -1,6 +1,6 @@
 export { tokenize, getTokenClass, type Token, type TokenType } from './tokenizer';
 export { parseJson, isValidJson, getValueType, getValuePreview, type ParseResult, type ParseError } from './parser';
-export { formatJson, compactJson, smartFormatJson, sortJsonKeys, type FormatOptions } from './formatter';
+export { formatJson, compactJson, smartFormatJson, sortJsonKeys, hasTemplateSyntax, type FormatOptions } from './formatter';
 export {
   repairJson,
   canRepairJson,

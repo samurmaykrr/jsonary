@@ -62,42 +62,163 @@ export function Tooltip({
       
       const rect = triggerRef.current.getBoundingClientRect();
       const gap = 8;
+      const padding = 8; // Minimum padding from viewport edge
       
-      let style: CSSProperties = {};
-      
-      switch (position) {
-        case 'top':
-          style = {
-            left: rect.left + rect.width / 2,
-            top: rect.top - gap,
-            transform: 'translate(-50%, -100%)',
-          };
-          break;
-        case 'bottom':
-          style = {
-            left: rect.left + rect.width / 2,
-            top: rect.bottom + gap,
-            transform: 'translate(-50%, 0)',
-          };
-          break;
-        case 'left':
-          style = {
-            left: rect.left - gap,
-            top: rect.top + rect.height / 2,
-            transform: 'translate(-100%, -50%)',
-          };
-          break;
-        case 'right':
-          style = {
-            left: rect.right + gap,
-            top: rect.top + rect.height / 2,
-            transform: 'translate(0, -50%)',
-          };
-          break;
-      }
-      
-      setCoords(style);
+      // Set initial visibility to measure tooltip
       setIsVisible(true);
+      
+      // Use requestAnimationFrame to ensure the tooltip is rendered before measuring
+      requestAnimationFrame(() => {
+        if (!tooltipRef.current) return;
+        
+        const tooltipRect = tooltipRef.current.getBoundingClientRect();
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        
+        let style: CSSProperties = {};
+        let finalPosition = position;
+        
+        // Helper to calculate position and check if it fits
+        const calculatePosition = (pos: TooltipPosition): { style: CSSProperties; fitsVertically: boolean; fitsHorizontally: boolean } => {
+          let calcStyle: CSSProperties = {};
+          
+          switch (pos) {
+            case 'top':
+              calcStyle = {
+                left: rect.left + rect.width / 2,
+                top: rect.top - gap,
+                transform: 'translate(-50%, -100%)',
+              };
+              break;
+            case 'bottom':
+              calcStyle = {
+                left: rect.left + rect.width / 2,
+                top: rect.bottom + gap,
+                transform: 'translate(-50%, 0)',
+              };
+              break;
+            case 'left':
+              calcStyle = {
+                left: rect.left - gap,
+                top: rect.top + rect.height / 2,
+                transform: 'translate(-100%, -50%)',
+              };
+              break;
+            case 'right':
+              calcStyle = {
+                left: rect.right + gap,
+                top: rect.top + rect.height / 2,
+                transform: 'translate(0, -50%)',
+              };
+              break;
+          }
+          
+          // Calculate actual tooltip bounds after transform
+          const left = typeof calcStyle.left === 'number' ? calcStyle.left : 0;
+          const top = typeof calcStyle.top === 'number' ? calcStyle.top : 0;
+          
+          let tooltipLeft = left;
+          let tooltipTop = top;
+          let tooltipRight = left;
+          let tooltipBottom = top;
+          
+          // Apply transform to calculate actual position
+          if (pos === 'top') {
+            tooltipLeft = left - tooltipRect.width / 2;
+            tooltipTop = top - tooltipRect.height;
+            tooltipRight = tooltipLeft + tooltipRect.width;
+            tooltipBottom = top;
+          } else if (pos === 'bottom') {
+            tooltipLeft = left - tooltipRect.width / 2;
+            tooltipTop = top;
+            tooltipRight = tooltipLeft + tooltipRect.width;
+            tooltipBottom = top + tooltipRect.height;
+          } else if (pos === 'left') {
+            tooltipLeft = left - tooltipRect.width;
+            tooltipTop = top - tooltipRect.height / 2;
+            tooltipRight = left;
+            tooltipBottom = tooltipTop + tooltipRect.height;
+          } else if (pos === 'right') {
+            tooltipLeft = left;
+            tooltipTop = top - tooltipRect.height / 2;
+            tooltipRight = left + tooltipRect.width;
+            tooltipBottom = tooltipTop + tooltipRect.height;
+          }
+          
+          const fitsVertically = tooltipTop >= padding && tooltipBottom <= viewportHeight - padding;
+          const fitsHorizontally = tooltipLeft >= padding && tooltipRight <= viewportWidth - padding;
+          
+          return { style: calcStyle, fitsVertically, fitsHorizontally };
+        };
+        
+        // Try primary position
+        const { style: primaryStyle, fitsVertically: primaryFitsV, fitsHorizontally: primaryFitsH } = calculatePosition(position);
+        style = primaryStyle;
+        let fitsVertically = primaryFitsV;
+        let fitsHorizontally = primaryFitsH;
+        
+        // If primary position doesn't fit, try flipping to opposite side
+        if (!fitsVertically || !fitsHorizontally) {
+          const oppositePosition: Record<TooltipPosition, TooltipPosition> = {
+            top: 'bottom',
+            bottom: 'top',
+            left: 'right',
+            right: 'left',
+          };
+          
+          const opposite = oppositePosition[position];
+          const { style: oppositeStyle, fitsVertically: oppositeFitsV, fitsHorizontally: oppositeFitsH } = calculatePosition(opposite);
+          
+          // Use opposite position if it fits better
+          if ((position === 'top' || position === 'bottom') && oppositeFitsV) {
+            style = oppositeStyle;
+            finalPosition = opposite;
+            fitsVertically = oppositeFitsV;
+            fitsHorizontally = oppositeFitsH;
+          } else if ((position === 'left' || position === 'right') && oppositeFitsH) {
+            style = oppositeStyle;
+            finalPosition = opposite;
+            fitsVertically = oppositeFitsV;
+            fitsHorizontally = oppositeFitsH;
+          }
+        }
+        
+        // Adjust horizontal position to prevent edge clipping
+        if (!fitsHorizontally && (finalPosition === 'top' || finalPosition === 'bottom')) {
+          const left = typeof style.left === 'number' ? style.left : 0;
+          const tooltipLeft = left - tooltipRect.width / 2;
+          const tooltipRight = tooltipLeft + tooltipRect.width;
+          
+          if (tooltipLeft < padding) {
+            // Clipping left edge - shift right
+            const shift = padding - tooltipLeft;
+            style.left = left + shift;
+          } else if (tooltipRight > viewportWidth - padding) {
+            // Clipping right edge - shift left
+            const shift = tooltipRight - (viewportWidth - padding);
+            style.left = left - shift;
+          }
+        }
+        
+        // Adjust vertical position to prevent edge clipping
+        if (!fitsVertically && (finalPosition === 'left' || finalPosition === 'right')) {
+          const top = typeof style.top === 'number' ? style.top : 0;
+          const tooltipTop = top - tooltipRect.height / 2;
+          const tooltipBottom = tooltipTop + tooltipRect.height;
+          
+          if (tooltipTop < padding) {
+            // Clipping top edge - shift down
+            const shift = padding - tooltipTop;
+            style.top = top + shift;
+          } else if (tooltipBottom > viewportHeight - padding) {
+            // Clipping bottom edge - shift up
+            const shift = tooltipBottom - (viewportHeight - padding);
+            style.top = top - shift;
+          }
+        }
+        
+        setCoords(style);
+      });
     }, delay);
   }, [disabled, delay, position]);
   

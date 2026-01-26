@@ -9,102 +9,140 @@
    ============================================ */
 
 /* ============================================
-   CSS Variables - Dark Theme (Default)
+   CSS Variables - Dark Theme (Cyberpunk Scarlet)
    ============================================ */
 :root {
   /* UI Scale - default 1 */
   --ui-scale: 1;
   
-  /* Backgrounds */
-  --bg-base: #0A0A0A;
-  --bg-surface: #0F0F0F;
-  --bg-elevated: #171717;
-  --bg-hover: #1A1A1A;
-  --bg-active: #262626;
+  /* Backgrounds - Based on Cyberpunk Scarlet Protocol Dark */
+  --bg-base: #1c1c28;
+  --bg-surface: #161620;
+  --bg-elevated: #2a2a35;
+  --bg-hover: #1e1e26;
+  --bg-active: #1e1e2a;
   
   /* Borders */
-  --border-subtle: #1F1F1F;
-  --border-default: #2E2E2E;
-  --border-strong: #3F3F3F;
+  --border-subtle: #2a2a35;
+  --border-default: #2a2a35;
+  --border-strong: #3a3a45;
   
   /* Text */
-  --text-primary: #FAFAFA;
-  --text-secondary: #A1A1A1;
-  --text-tertiary: #737373;
-  --text-muted: #525252;
+  --text-primary: #d13454;
+  --text-secondary: #c7c7c7;
+  --text-tertiary: #8a8a98;
+  --text-muted: #606070;
   
-  /* Accent (Blue) */
-  --accent: #3B82F6;
-  --accent-hover: #60A5FA;
-  --accent-muted: rgba(59, 130, 246, 0.125);
+  /* Accent (Scarlet Red) */
+  --accent: #ea3355;
+  --accent-hover: #ea3355ee;
+  --accent-muted: rgba(234, 51, 85, 0.125);
   
   /* Semantic */
-  --success: #22C55E;
-  --warning: #F59E0B;
-  --error: #EF4444;
-  --info: #3B82F6;
+  --success: #64d98c;
+  --warning: #faf968;
+  --error: #ea3355;
+  --info: #6a71f6;
   
   /* Editor-specific */
-  --editor-bg: #0A0A0A;
-  --editor-line-active: #1A1A1A;
-  --editor-selection: rgba(59, 130, 246, 0.19);
-  --editor-cursor: #FAFAFA;
-  --editor-gutter: #0F0F0F;
-  --editor-gutter-text: #525252;
+  --editor-bg: #101116;
+  --editor-line-active: #1a1a24bf;
+  --editor-selection: rgba(234, 51, 85, 0.19);
+  --editor-cursor: #ea3355;
+  --editor-gutter: #0c0c10;
+  --editor-gutter-text: #505060;
+  --editor-line-number: #505060;
+  --editor-active-line-number: #ea3355;
   
-  /* Syntax Highlighting (One Dark inspired) */
-  --syntax-key: #61AFEF;
-  --syntax-string: #98C379;
-  --syntax-number: #D19A66;
-  --syntax-boolean: #C678DD;
-  --syntax-null: #5C6370;
-  --syntax-bracket: #ABB2BF;
-  --syntax-punctuation: #5C6370;
-  --syntax-error: #E06C75;
+  /* Syntax Highlighting (Cyberpunk Scarlet) */
+  --syntax-key: #ed776d;
+  --syntax-string: #8df77a;
+  --syntax-number: #ae40e4;
+  --syntax-boolean: #ba3ec1;
+  --syntax-null: #8a8a98;
+  --syntax-bracket: #8a8a98;
+  --syntax-punctuation: #8a8a98;
+  --syntax-error: #ea3355;
+  --syntax-comment: #686868;
+  --syntax-function: #64d98c;
+  --syntax-keyword: #ba3ec1;
+  --syntax-type: #59c2c6;
+  --syntax-operator: #ea3355;
   
   /* Diff */
-  --diff-added-bg: rgba(34, 197, 94, 0.08);
-  --diff-added-border: rgba(34, 197, 94, 0.25);
-  --diff-removed-bg: rgba(239, 68, 68, 0.08);
-  --diff-removed-border: rgba(239, 68, 68, 0.25);
-  --diff-modified-bg: rgba(245, 158, 11, 0.08);
-  --diff-modified-border: rgba(245, 158, 11, 0.25);
+  --diff-added-bg: rgba(100, 217, 140, 0.08);
+  --diff-added-border: rgba(100, 217, 140, 0.25);
+  --diff-removed-bg: rgba(234, 51, 85, 0.08);
+  --diff-removed-border: rgba(234, 51, 85, 0.25);
+  --diff-modified-bg: rgba(250, 249, 104, 0.08);
+  --diff-modified-border: rgba(250, 249, 104, 0.25);
 }
 
 /* ============================================
-   Light Theme
+   Light Theme (Cyberpunk Scarlet Light)
    ============================================ */
 .light {
-  --bg-base: #FAFAFA;
-  --bg-surface: #FFFFFF;
-  --bg-elevated: #FFFFFF;
-  --bg-hover: #F4F4F5;
-  --bg-active: #E4E4E7;
+  /* Backgrounds - Based on Cyberpunk Scarlet Protocol Light */
+  --bg-base: #e8e8ee;
+  --bg-surface: #f0f0f4;
+  --bg-elevated: #ffffff;
+  --bg-hover: #e4e4ea;
+  --bg-active: #e0e0e6;
   
-  --border-subtle: #F4F4F5;
-  --border-default: #E4E4E7;
-  --border-strong: #D4D4D8;
+  /* Borders */
+  --border-subtle: #d0d0d8;
+  --border-default: #d0d0d8;
+  --border-strong: #b0b0b8;
   
-  --text-primary: #09090B;
-  --text-secondary: #52525B;
-  --text-tertiary: #71717A;
-  --text-muted: #A1A1AA;
+  /* Text */
+  --text-primary: #a01030;
+  --text-secondary: #303038;
+  --text-tertiary: #606068;
+  --text-muted: #909098;
   
-  --editor-bg: #FFFFFF;
-  --editor-line-active: #F4F4F5;
-  --editor-selection: rgba(59, 130, 246, 0.19);
-  --editor-gutter: #FAFAFA;
-  --editor-gutter-text: #A1A1AA;
+  /* Accent (Scarlet Red) */
+  --accent: #c41035;
+  --accent-hover: #c41035ee;
+  --accent-muted: rgba(196, 16, 53, 0.125);
   
-  /* Syntax (adjusted for light bg) */
-  --syntax-key: #0550AE;
-  --syntax-string: #1A7F37;
-  --syntax-number: #953800;
-  --syntax-boolean: #8250DF;
-  --syntax-null: #6E7781;
-  --syntax-bracket: #24292F;
-  --syntax-punctuation: #6E7781;
-  --syntax-error: #CF222E;
+  /* Semantic */
+  --success: #2a9050;
+  --warning: #a08800;
+  --error: #c41035;
+  --info: #4060d0;
+  
+  /* Editor-specific */
+  --editor-bg: #f8f8fa;
+  --editor-line-active: #e8e8eebf;
+  --editor-selection: rgba(196, 16, 53, 0.19);
+  --editor-cursor: #c41035;
+  --editor-gutter: #f0f0f4;
+  --editor-gutter-text: #a0a0a8;
+  --editor-line-number: #a0a0a8;
+  --editor-active-line-number: #c41035;
+  
+  /* Syntax Highlighting (Cyberpunk Scarlet Light) */
+  --syntax-key: #e85070;
+  --syntax-string: #40b060;
+  --syntax-number: #b040c0;
+  --syntax-boolean: #9020a0;
+  --syntax-null: #606068;
+  --syntax-bracket: #606068;
+  --syntax-punctuation: #606068;
+  --syntax-error: #c41035;
+  --syntax-comment: #909098;
+  --syntax-function: #2a9050;
+  --syntax-keyword: #9020a0;
+  --syntax-type: #208888;
+  --syntax-operator: #c41035;
+  
+  /* Diff */
+  --diff-added-bg: rgba(42, 144, 80, 0.08);
+  --diff-added-border: rgba(42, 144, 80, 0.25);
+  --diff-removed-bg: rgba(196, 16, 53, 0.08);
+  --diff-removed-border: rgba(196, 16, 53, 0.25);
+  --diff-modified-bg: rgba(160, 136, 0, 0.08);
+  --diff-modified-border: rgba(160, 136, 0, 0.25);
 }
 
 /* ============================================
@@ -151,6 +189,11 @@
   --color-syntax-bracket: var(--syntax-bracket);
   --color-syntax-punctuation: var(--syntax-punctuation);
   --color-syntax-error: var(--syntax-error);
+  --color-syntax-comment: var(--syntax-comment);
+  --color-syntax-function: var(--syntax-function);
+  --color-syntax-keyword: var(--syntax-keyword);
+  --color-syntax-type: var(--syntax-type);
+  --color-syntax-operator: var(--syntax-operator);
   
   --color-diff-added-bg: var(--diff-added-bg);
   --color-diff-added-border: var(--diff-added-border);

@@ -1,278 +1,278 @@
 import { useRef, useCallback, useEffect, useState } from 'react';
 import Editor, { type Monaco, type OnMount, loader } from '@monaco-editor/react';
 import type { editor } from 'monaco-editor';
-import { parseJson, type ParseError } from '@/lib/json/parser';
+import { parseJson, type ParseError, hasTemplateSyntax } from '@/lib/json';
 import { findPathLine } from '@/lib/json/validator';
 import { useCurrentDocument, useUpdateCurrentContent, useValidationErrors } from '@/store/useDocumentStore';
 import { useSearch } from '@/store/useSearchStore';
 import { useEditor } from '@/store/useEditorStore';
 import { useEditorSettings, useUISettings } from '@/store/useSettingsStore';
 
-// Custom dark theme matching our design system
+// Custom dark theme matching Cyberpunk Scarlet Protocol
 const JSONARY_DARK_THEME: editor.IStandaloneThemeData = {
   base: 'vs-dark',
   inherit: false,
   rules: [
     // General
-    { token: '', foreground: 'FAFAFA', background: '0A0A0A' },
-    { token: 'invalid', foreground: 'E06C75' },
+    { token: '', foreground: 'c7c7c7', background: '101116' },
+    { token: 'invalid', foreground: 'ea3355' },
     { token: 'emphasis', fontStyle: 'italic' },
     { token: 'strong', fontStyle: 'bold' },
 
     // JSON specific
-    { token: 'string.key.json', foreground: '61AFEF' },
-    { token: 'string.value.json', foreground: '98C379' },
-    { token: 'number.json', foreground: 'D19A66' },
-    { token: 'keyword.json', foreground: 'C678DD' }, // true, false, null
-    { token: 'delimiter.bracket.json', foreground: 'ABB2BF' },
-    { token: 'delimiter.array.json', foreground: 'ABB2BF' },
-    { token: 'delimiter.colon.json', foreground: '5C6370' },
-    { token: 'delimiter.comma.json', foreground: '5C6370' },
+    { token: 'string.key.json', foreground: 'ed776d' },
+    { token: 'string.value.json', foreground: '8df77a' },
+    { token: 'number.json', foreground: 'ae40e4' },
+    { token: 'keyword.json', foreground: 'ba3ec1' }, // true, false, null
+    { token: 'delimiter.bracket.json', foreground: '8a8a98' },
+    { token: 'delimiter.array.json', foreground: '8a8a98' },
+    { token: 'delimiter.colon.json', foreground: '8a8a98' },
+    { token: 'delimiter.comma.json', foreground: '8a8a98' },
 
     // Comments (for JSONC)
-    { token: 'comment', foreground: '5C6370', fontStyle: 'italic' },
-    { token: 'comment.line', foreground: '5C6370', fontStyle: 'italic' },
-    { token: 'comment.block', foreground: '5C6370', fontStyle: 'italic' },
+    { token: 'comment', foreground: '686868', fontStyle: 'italic' },
+    { token: 'comment.line', foreground: '686868', fontStyle: 'italic' },
+    { token: 'comment.block', foreground: '686868', fontStyle: 'italic' },
   ],
   colors: {
     // Editor background and foreground
-    'editor.background': '#0A0A0A',
-    'editor.foreground': '#FAFAFA',
+    'editor.background': '#101116',
+    'editor.foreground': '#c7c7c7',
 
     // Line numbers
-    'editorLineNumber.foreground': '#525252',
-    'editorLineNumber.activeForeground': '#A1A1A1',
+    'editorLineNumber.foreground': '#505060',
+    'editorLineNumber.activeForeground': '#ea3355',
 
     // Cursor
-    'editorCursor.foreground': '#3B82F6',
-    'editorCursor.background': '#0A0A0A',
+    'editorCursor.foreground': '#ea3355',
+    'editorCursor.background': '#101116',
 
     // Selection
-    'editor.selectionBackground': '#3B82F630',
-    'editor.inactiveSelectionBackground': '#3B82F620',
-    'editor.selectionHighlightBackground': '#3B82F620',
+    'editor.selectionBackground': '#ea335530',
+    'editor.inactiveSelectionBackground': '#ea335520',
+    'editor.selectionHighlightBackground': '#ea335520',
 
     // Current line
-    'editor.lineHighlightBackground': '#1A1A1A',
-    'editor.lineHighlightBorder': '#1A1A1A',
+    'editor.lineHighlightBackground': '#1a1a24bf',
+    'editor.lineHighlightBorder': '#1a1a24bf',
 
     // Indentation guides
-    'editorIndentGuide.background': '#1F1F1F',
-    'editorIndentGuide.activeBackground': '#3F3F3F',
+    'editorIndentGuide.background': '#2a2a35',
+    'editorIndentGuide.activeBackground': '#3a3a45',
 
     // Bracket matching
-    'editorBracketMatch.background': '#3B82F630',
-    'editorBracketMatch.border': '#3B82F6',
+    'editorBracketMatch.background': '#ea335530',
+    'editorBracketMatch.border': '#ea3355',
 
     // Bracket pair colorization
-    'editorBracketHighlight.foreground1': '#61AFEF',
-    'editorBracketHighlight.foreground2': '#C678DD',
-    'editorBracketHighlight.foreground3': '#D19A66',
-    'editorBracketHighlight.foreground4': '#98C379',
-    'editorBracketHighlight.foreground5': '#E06C75',
-    'editorBracketHighlight.foreground6': '#56B6C2',
+    'editorBracketHighlight.foreground1': '#ed776d',
+    'editorBracketHighlight.foreground2': '#ba3ec1',
+    'editorBracketHighlight.foreground3': '#ae40e4',
+    'editorBracketHighlight.foreground4': '#59c2c6',
+    'editorBracketHighlight.foreground5': '#6a71f6',
+    'editorBracketHighlight.foreground6': '#faf968',
 
     // Gutter
-    'editorGutter.background': '#0F0F0F',
-    'editorGutter.modifiedBackground': '#F59E0B',
-    'editorGutter.addedBackground': '#22C55E',
-    'editorGutter.deletedBackground': '#EF4444',
+    'editorGutter.background': '#0c0c10',
+    'editorGutter.modifiedBackground': '#faf968',
+    'editorGutter.addedBackground': '#64d98c',
+    'editorGutter.deletedBackground': '#ea3355',
 
     // Folding
-    'editor.foldBackground': '#1A1A1A80',
+    'editor.foldBackground': '#1a1a2480',
 
     // Find/Search
-    'editor.findMatchBackground': '#F59E0B40',
-    'editor.findMatchHighlightBackground': '#F59E0B25',
-    'editor.findRangeHighlightBackground': '#3B82F615',
+    'editor.findMatchBackground': '#faf96840',
+    'editor.findMatchHighlightBackground': '#faf96825',
+    'editor.findRangeHighlightBackground': '#ea335515',
 
     // Hover widget
-    'editorHoverWidget.background': '#171717',
-    'editorHoverWidget.border': '#2E2E2E',
-    'editorHoverWidget.foreground': '#FAFAFA',
+    'editorHoverWidget.background': '#2a2a35',
+    'editorHoverWidget.border': '#2a2a35',
+    'editorHoverWidget.foreground': '#c7c7c7',
 
     // Widget (find widget, etc.)
-    'editorWidget.background': '#171717',
-    'editorWidget.border': '#2E2E2E',
-    'editorWidget.foreground': '#FAFAFA',
+    'editorWidget.background': '#2a2a35',
+    'editorWidget.border': '#2a2a35',
+    'editorWidget.foreground': '#c7c7c7',
 
     // Input fields in widgets
-    'input.background': '#0F0F0F',
-    'input.border': '#2E2E2E',
-    'input.foreground': '#FAFAFA',
-    'input.placeholderForeground': '#525252',
-    'inputOption.activeBackground': '#3B82F640',
-    'inputOption.activeBorder': '#3B82F6',
+    'input.background': '#161620',
+    'input.border': '#2a2a35',
+    'input.foreground': '#c7c7c7',
+    'input.placeholderForeground': '#606070',
+    'inputOption.activeBackground': '#ea335540',
+    'inputOption.activeBorder': '#ea3355',
 
     // Buttons
-    'button.background': '#3B82F6',
-    'button.foreground': '#FAFAFA',
-    'button.hoverBackground': '#60A5FA',
+    'button.background': '#ea3355',
+    'button.foreground': '#ffffff',
+    'button.hoverBackground': '#ea3355ee',
 
     // Scrollbar
     'scrollbar.shadow': '#00000000',
-    'scrollbarSlider.background': '#2E2E2E80',
-    'scrollbarSlider.hoverBackground': '#3F3F3F',
-    'scrollbarSlider.activeBackground': '#525252',
+    'scrollbarSlider.background': '#ea33554c',
+    'scrollbarSlider.hoverBackground': '#ea335580',
+    'scrollbarSlider.activeBackground': '#ea3355',
 
     // Error/Warning squiggles
-    'editorError.foreground': '#EF4444',
-    'editorWarning.foreground': '#F59E0B',
-    'editorInfo.foreground': '#3B82F6',
+    'editorError.foreground': '#ea3355',
+    'editorWarning.foreground': '#faf968',
+    'editorInfo.foreground': '#6a71f6',
 
     // Overview ruler (scrollbar annotations)
-    'editorOverviewRuler.border': '#1F1F1F',
-    'editorOverviewRuler.errorForeground': '#EF4444',
-    'editorOverviewRuler.warningForeground': '#F59E0B',
-    'editorOverviewRuler.infoForeground': '#3B82F6',
+    'editorOverviewRuler.border': '#2a2a35',
+    'editorOverviewRuler.errorForeground': '#ea3355',
+    'editorOverviewRuler.warningForeground': '#faf968',
+    'editorOverviewRuler.infoForeground': '#6a71f6',
 
     // Minimap (disabled but just in case)
-    'minimap.background': '#0F0F0F',
+    'minimap.background': '#0c0c10',
 
     // Dropdown
-    'dropdown.background': '#171717',
-    'dropdown.border': '#2E2E2E',
-    'dropdown.foreground': '#FAFAFA',
+    'dropdown.background': '#2a2a35',
+    'dropdown.border': '#2a2a35',
+    'dropdown.foreground': '#c7c7c7',
 
     // List (autocomplete, etc.)
-    'list.activeSelectionBackground': '#3B82F640',
-    'list.activeSelectionForeground': '#FAFAFA',
-    'list.hoverBackground': '#1A1A1A',
-    'list.focusBackground': '#262626',
+    'list.activeSelectionBackground': '#ea335540',
+    'list.activeSelectionForeground': '#c7c7c7',
+    'list.hoverBackground': '#1e1e26',
+    'list.focusBackground': '#1e1e2a',
   },
 };
 
-// Custom light theme matching our design system
+// Custom light theme matching Cyberpunk Scarlet Protocol Light
 const JSONARY_LIGHT_THEME: editor.IStandaloneThemeData = {
   base: 'vs',
   inherit: false,
   rules: [
     // General
-    { token: '', foreground: '09090B', background: 'FFFFFF' },
-    { token: 'invalid', foreground: 'CF222E' },
+    { token: '', foreground: '303038', background: 'f8f8fa' },
+    { token: 'invalid', foreground: 'c41035' },
     { token: 'emphasis', fontStyle: 'italic' },
     { token: 'strong', fontStyle: 'bold' },
 
     // JSON specific
-    { token: 'string.key.json', foreground: '0550AE' },
-    { token: 'string.value.json', foreground: '1A7F37' },
-    { token: 'number.json', foreground: '953800' },
-    { token: 'keyword.json', foreground: '8250DF' }, // true, false, null
-    { token: 'delimiter.bracket.json', foreground: '24292F' },
-    { token: 'delimiter.array.json', foreground: '24292F' },
-    { token: 'delimiter.colon.json', foreground: '6E7781' },
-    { token: 'delimiter.comma.json', foreground: '6E7781' },
+    { token: 'string.key.json', foreground: 'e85070' },
+    { token: 'string.value.json', foreground: '40b060' },
+    { token: 'number.json', foreground: 'b040c0' },
+    { token: 'keyword.json', foreground: '9020a0' }, // true, false, null
+    { token: 'delimiter.bracket.json', foreground: '606068' },
+    { token: 'delimiter.array.json', foreground: '606068' },
+    { token: 'delimiter.colon.json', foreground: '606068' },
+    { token: 'delimiter.comma.json', foreground: '606068' },
 
     // Comments (for JSONC)
-    { token: 'comment', foreground: '6E7781', fontStyle: 'italic' },
-    { token: 'comment.line', foreground: '6E7781', fontStyle: 'italic' },
-    { token: 'comment.block', foreground: '6E7781', fontStyle: 'italic' },
+    { token: 'comment', foreground: '909098', fontStyle: 'italic' },
+    { token: 'comment.line', foreground: '909098', fontStyle: 'italic' },
+    { token: 'comment.block', foreground: '909098', fontStyle: 'italic' },
   ],
   colors: {
     // Editor background and foreground
-    'editor.background': '#FFFFFF',
-    'editor.foreground': '#09090B',
+    'editor.background': '#f8f8fa',
+    'editor.foreground': '#303038',
 
     // Line numbers
-    'editorLineNumber.foreground': '#A1A1AA',
-    'editorLineNumber.activeForeground': '#52525B',
+    'editorLineNumber.foreground': '#a0a0a8',
+    'editorLineNumber.activeForeground': '#c41035',
 
     // Cursor
-    'editorCursor.foreground': '#3B82F6',
-    'editorCursor.background': '#FFFFFF',
+    'editorCursor.foreground': '#c41035',
+    'editorCursor.background': '#f8f8fa',
 
     // Selection
-    'editor.selectionBackground': '#3B82F630',
-    'editor.inactiveSelectionBackground': '#3B82F620',
-    'editor.selectionHighlightBackground': '#3B82F620',
+    'editor.selectionBackground': '#c4103530',
+    'editor.inactiveSelectionBackground': '#c4103520',
+    'editor.selectionHighlightBackground': '#c4103520',
 
     // Current line
-    'editor.lineHighlightBackground': '#F4F4F5',
-    'editor.lineHighlightBorder': '#F4F4F5',
+    'editor.lineHighlightBackground': '#e8e8eebf',
+    'editor.lineHighlightBorder': '#e8e8eebf',
 
     // Indentation guides
-    'editorIndentGuide.background': '#E4E4E7',
-    'editorIndentGuide.activeBackground': '#D4D4D8',
+    'editorIndentGuide.background': '#d0d0d8',
+    'editorIndentGuide.activeBackground': '#b0b0b8',
 
     // Bracket matching
-    'editorBracketMatch.background': '#3B82F630',
-    'editorBracketMatch.border': '#3B82F6',
+    'editorBracketMatch.background': '#c4103530',
+    'editorBracketMatch.border': '#c41035',
 
     // Bracket pair colorization
-    'editorBracketHighlight.foreground1': '#0550AE',
-    'editorBracketHighlight.foreground2': '#8250DF',
-    'editorBracketHighlight.foreground3': '#953800',
-    'editorBracketHighlight.foreground4': '#1A7F37',
-    'editorBracketHighlight.foreground5': '#CF222E',
-    'editorBracketHighlight.foreground6': '#0969DA',
+    'editorBracketHighlight.foreground1': '#e85070',
+    'editorBracketHighlight.foreground2': '#9020a0',
+    'editorBracketHighlight.foreground3': '#b040c0',
+    'editorBracketHighlight.foreground4': '#208888',
+    'editorBracketHighlight.foreground5': '#4060d0',
+    'editorBracketHighlight.foreground6': '#a08800',
 
     // Gutter
-    'editorGutter.background': '#FAFAFA',
-    'editorGutter.modifiedBackground': '#F59E0B',
-    'editorGutter.addedBackground': '#22C55E',
-    'editorGutter.deletedBackground': '#EF4444',
+    'editorGutter.background': '#f0f0f4',
+    'editorGutter.modifiedBackground': '#a08800',
+    'editorGutter.addedBackground': '#2a9050',
+    'editorGutter.deletedBackground': '#c41035',
 
     // Folding
-    'editor.foldBackground': '#F4F4F580',
+    'editor.foldBackground': '#e8e8ee80',
 
     // Find/Search
-    'editor.findMatchBackground': '#F59E0B40',
-    'editor.findMatchHighlightBackground': '#F59E0B25',
-    'editor.findRangeHighlightBackground': '#3B82F615',
+    'editor.findMatchBackground': '#a0880040',
+    'editor.findMatchHighlightBackground': '#a0880025',
+    'editor.findRangeHighlightBackground': '#c4103515',
 
     // Hover widget
-    'editorHoverWidget.background': '#FFFFFF',
-    'editorHoverWidget.border': '#E4E4E7',
-    'editorHoverWidget.foreground': '#09090B',
+    'editorHoverWidget.background': '#ffffff',
+    'editorHoverWidget.border': '#d0d0d8',
+    'editorHoverWidget.foreground': '#303038',
 
     // Widget (find widget, etc.)
-    'editorWidget.background': '#FFFFFF',
-    'editorWidget.border': '#E4E4E7',
-    'editorWidget.foreground': '#09090B',
+    'editorWidget.background': '#ffffff',
+    'editorWidget.border': '#d0d0d8',
+    'editorWidget.foreground': '#303038',
 
     // Input fields in widgets
-    'input.background': '#FFFFFF',
-    'input.border': '#E4E4E7',
-    'input.foreground': '#09090B',
-    'input.placeholderForeground': '#A1A1AA',
-    'inputOption.activeBackground': '#3B82F640',
-    'inputOption.activeBorder': '#3B82F6',
+    'input.background': '#f0f0f4',
+    'input.border': '#d0d0d8',
+    'input.foreground': '#303038',
+    'input.placeholderForeground': '#909098',
+    'inputOption.activeBackground': '#c4103540',
+    'inputOption.activeBorder': '#c41035',
 
     // Buttons
-    'button.background': '#3B82F6',
-    'button.foreground': '#FFFFFF',
-    'button.hoverBackground': '#60A5FA',
+    'button.background': '#c41035',
+    'button.foreground': '#ffffff',
+    'button.hoverBackground': '#c41035ee',
 
     // Scrollbar
     'scrollbar.shadow': '#00000010',
-    'scrollbarSlider.background': '#E4E4E780',
-    'scrollbarSlider.hoverBackground': '#D4D4D8',
-    'scrollbarSlider.activeBackground': '#A1A1AA',
+    'scrollbarSlider.background': '#c410354c',
+    'scrollbarSlider.hoverBackground': '#c4103580',
+    'scrollbarSlider.activeBackground': '#c41035',
 
     // Error/Warning squiggles
-    'editorError.foreground': '#EF4444',
-    'editorWarning.foreground': '#F59E0B',
-    'editorInfo.foreground': '#3B82F6',
+    'editorError.foreground': '#c41035',
+    'editorWarning.foreground': '#a08800',
+    'editorInfo.foreground': '#4060d0',
 
     // Overview ruler (scrollbar annotations)
-    'editorOverviewRuler.border': '#E4E4E7',
-    'editorOverviewRuler.errorForeground': '#EF4444',
-    'editorOverviewRuler.warningForeground': '#F59E0B',
-    'editorOverviewRuler.infoForeground': '#3B82F6',
+    'editorOverviewRuler.border': '#d0d0d8',
+    'editorOverviewRuler.errorForeground': '#c41035',
+    'editorOverviewRuler.warningForeground': '#a08800',
+    'editorOverviewRuler.infoForeground': '#4060d0',
 
     // Minimap (disabled but just in case)
-    'minimap.background': '#FAFAFA',
+    'minimap.background': '#f0f0f4',
 
     // Dropdown
-    'dropdown.background': '#FFFFFF',
-    'dropdown.border': '#E4E4E7',
-    'dropdown.foreground': '#09090B',
+    'dropdown.background': '#ffffff',
+    'dropdown.border': '#d0d0d8',
+    'dropdown.foreground': '#303038',
 
     // List (autocomplete, etc.)
-    'list.activeSelectionBackground': '#3B82F640',
-    'list.activeSelectionForeground': '#09090B',
-    'list.hoverBackground': '#F4F4F5',
-    'list.focusBackground': '#E4E4E7',
+    'list.activeSelectionBackground': '#c4103540',
+    'list.activeSelectionForeground': '#303038',
+    'list.hoverBackground': '#e4e4ea',
+    'list.focusBackground': '#e0e0e6',
   },
 };
 
@@ -361,6 +361,22 @@ export function TextEditor() {
     }
   }, [updateContent]);
 
+  // Dynamically disable Monaco's JSON validation when templates are detected
+  useEffect(() => {
+    if (!monacoRef.current) return;
+    
+    const monaco = monacoRef.current;
+    const hasTemplates = hasTemplateSyntax(content);
+    
+    // Disable validation for content with templates, enable for regular JSON
+    monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
+      validate: !hasTemplates,
+      allowComments: false,
+      schemas: [],
+      enableSchemaRequest: false,
+    });
+  }, [content]);
+
   // Update markers for validation errors
   useEffect(() => {
     if (!isEditorReady || !monacoRef.current || !editorRef.current) return;
@@ -370,9 +386,13 @@ export function TextEditor() {
     if (!model) return;
 
     const markers: editor.IMarkerData[] = [];
+    
+    // Check if content has template syntax
+    const hasTemplates = hasTemplateSyntax(content);
 
-    // Add parse error marker
-    if (jsonError) {
+    // Add parse error marker only if there's no template syntax
+    // (templates will be handled by auto-repair on format)
+    if (jsonError && !hasTemplates) {
       markers.push({
         severity: monaco.MarkerSeverity.Error,
         message: jsonError.message,

@@ -4,6 +4,7 @@ import { useEditor } from '@/store/useEditorStore';
 import { CheckCircle, XCircle, Warning, FileJs } from '@phosphor-icons/react';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { useBranding } from '@/config/branding';
+import { hasTemplateSyntax, repairJson } from '@/lib/json';
 
 /**
  * Calculate document statistics
@@ -30,9 +31,13 @@ function useDocumentStats(content: string) {
 
 /**
  * Parse JSON and count elements
+ * Also checks for template syntax and attempts repair
  */
 function useJsonStats(content: string) {
   return useMemo(() => {
+    // Check for template syntax first
+    const hasTemplates = hasTemplateSyntax(content);
+    
     try {
       const parsed = JSON.parse(content);
       
@@ -53,9 +58,27 @@ function useJsonStats(content: string) {
       }
       
       count(parsed);
-      return { objects, arrays, keys, isValid: true };
+      return { objects, arrays, keys, isValid: true, hasTemplates: false };
     } catch {
-      return { objects: 0, arrays: 0, keys: 0, isValid: false };
+      // If it has templates, try repairing it
+      if (hasTemplates) {
+        const repairResult = repairJson(content, { 
+          preserveTemplates: true 
+        });
+        
+        if (repairResult.output) {
+          try {
+            JSON.parse(repairResult.output);
+            // Repairable with templates
+            return { objects: 0, arrays: 0, keys: 0, isValid: false, hasTemplates: true, canRepair: true };
+          } catch {
+            // Has templates but still invalid even after repair
+            return { objects: 0, arrays: 0, keys: 0, isValid: false, hasTemplates: true, canRepair: false };
+          }
+        }
+      }
+      
+      return { objects: 0, arrays: 0, keys: 0, isValid: false, hasTemplates: false };
     }
   }, [content]);
 }
@@ -67,7 +90,7 @@ export function StatusBar() {
 
   const content = doc?.content ?? '';
   const { lines, chars, size } = useDocumentStats(content);
-  const { isValid } = useJsonStats(content);
+  const { isValid, hasTemplates, canRepair } = useJsonStats(content);
   
   // Determine validation status
   const hasParseError = doc?.parseError !== null && doc?.parseError !== undefined;
@@ -112,6 +135,14 @@ export function StatusBar() {
                 <span className="text-green-500 hidden sm:inline">Valid JSON</span>
                 <span className="text-green-500 sm:hidden">OK</span>
               </>
+            ) : hasTemplates && canRepair ? (
+              <Tooltip content="JSON with template syntax (use Format to fix)" position="top">
+                <div className="flex items-center gap-1.5">
+                  <Warning weight="fill" className="w-3.5 h-3.5 text-blue-500" />
+                  <span className="text-blue-500 hidden sm:inline">JSON with Templates</span>
+                  <span className="text-blue-500 sm:hidden">Template</span>
+                </div>
+              </Tooltip>
             ) : (
               <Tooltip content="Click to go to error (F8)" position="top">
                 <button

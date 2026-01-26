@@ -254,3 +254,51 @@ describe('sortJsonKeys', () => {
     expect(result).toContain('    ')
   })
 })
+
+describe('formatJson with autoRepair', () => {
+  it('automatically repairs invalid JSON with templates before formatting', () => {
+    const input = '{"data": {{ data | tojson }}, "count": 5}';
+    const result = formatJson(input, { indent: 2, preserveTemplates: true, autoRepair: true });
+    
+    // Should be formatted with newlines
+    expect(result).toMatch(/\n/);
+    // Should preserve the template
+    expect(result).toContain('{{ data | tojson }}');
+    // Should be valid JSON structure (with template preserved)
+    expect(result).toContain('"data"');
+    expect(result).toContain('"count"');
+  });
+
+  it('repairs missing quotes on keys', () => {
+    const input = '{name: {{ user_name }}, age: 30}';
+    const result = formatJson(input, { indent: 2, autoRepair: true });
+    
+    expect(result).toContain('"name"');
+    expect(result).toContain('"age"');
+    expect(result).toContain('{{ user_name }}');
+  });
+
+  it('repairs trailing commas', () => {
+    const input = '{"name": {{ user }}, "age": 30,}';
+    const result = formatJson(input, { indent: 2, autoRepair: true });
+    
+    expect(result).not.toMatch(/,\s*}/);
+    expect(result).toContain('{{ user }}');
+  });
+
+  it('can disable autoRepair', () => {
+    const input = '{invalid json}';
+    const result = formatJson(input, { autoRepair: false });
+    
+    // Should return original when autoRepair is disabled
+    expect(result).toBe(input);
+  });
+
+  it('returns original if repair fails', () => {
+    const input = 'completely broken { [ }';
+    const result = formatJson(input, { autoRepair: true });
+    
+    // Should return original if repair completely fails
+    expect(result).toBe(input);
+  });
+});
