@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { 
   Code, 
   TreeStructure, 
@@ -32,6 +32,8 @@ import { usePanelLayout } from '@/store/useEditorStore';
 import type { ViewMode } from '@/types';
 import { openFile, readFromClipboard, saveFile, fetchFromUrl } from '@/lib/file';
 import { formatJson, parseJson } from '@/lib/json';
+import { useFormatterWorker } from '@/hooks/useWorker';
+import { useCursorProgress } from '@/components/ui';
 import { parseCsv, stringifyCsv, looksLikeCsv } from '@/lib/csv';
 import { jsonToYaml } from '@/lib/yaml';
 import { jsonToToml } from '@/lib/toml';
@@ -46,6 +48,11 @@ export function Header() {
   const { setViewMode, createDocument, renameDocument, markSaved } = useDocumentActions();
   const { theme, toggleTheme } = useTheme();
   const { panelLayout, toggleSplitView, setRightPanelDoc } = usePanelLayout();
+  
+  // Worker for background processing of large documents
+  const { format: formatAsync, isReady: isWorkerReady } = useFormatterWorker(true);
+  const { show: showProgress, hide: hideProgress } = useCursorProgress();
+  
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -110,11 +117,29 @@ export function Header() {
     }
   }, [createDocument]);
   
-  const handleSaveFile = useCallback(async () => {
+  const handleSaveFile = useCallback(async (e?: React.MouseEvent) => {
     setMenuOpen(null);
     if (!activeDoc) return;
     
-    const content = formatJson(activeDoc.content) ?? activeDoc.content;
+    // Threshold for using worker (only use worker for large documents)
+    const WORKER_THRESHOLD = 10000; // 10KB
+    
+    let content: string;
+    
+    // Use worker for large documents
+    if (isWorkerReady && activeDoc.content.length > WORKER_THRESHOLD) {
+      showProgress('Preparing to save...', e);
+      try {
+        const { output, error } = await formatAsync(activeDoc.content, { indent: 2 });
+        content = error ? activeDoc.content : output;
+      } finally {
+        hideProgress();
+      }
+    } else {
+      // Small documents: use synchronous formatting
+      content = formatJson(activeDoc.content) ?? activeDoc.content;
+    }
+    
     const result = await saveFile(content, {
       suggestedName: activeDoc.name.endsWith('.json') ? activeDoc.name : `${activeDoc.name}.json`,
     });
@@ -125,7 +150,7 @@ export function Header() {
       }
       markSaved(activeDoc.id);
     }
-  }, [activeDoc, renameDocument, markSaved]);
+  }, [activeDoc, renameDocument, markSaved, isWorkerReady, formatAsync, showProgress, hideProgress]);
   
   const handlePasteFromClipboard = useCallback(async () => {
     setMenuOpen(null);
@@ -377,7 +402,7 @@ export function Header() {
                     </button>
                     <div className="border-t border-border-subtle my-1" />
                     <button
-                      onClick={handleSaveFile}
+                      onClick={(e) => { handleSaveFile(e); }}
                       disabled={!activeDoc}
                       className="w-full px-3 py-1.5 text-sm text-left text-text-secondary hover:text-text-primary hover:bg-bg-hover flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
@@ -695,7 +720,7 @@ export function Header() {
                   Paste from Clipboard
                 </button>
                 <button
-                  onClick={() => { handleSaveFile(); setMobileMenuOpen(false); }}
+                  onClick={(e) => { handleSaveFile(e); setMobileMenuOpen(false); }}
                   disabled={!activeDoc}
                   className="w-full px-3 py-3 text-sm text-left text-text-secondary hover:text-text-primary hover:bg-bg-hover rounded flex items-center gap-3 disabled:opacity-50"
                 >

@@ -14,3 +14,4 @@ export { GoToLineModal } from './GoToLineModal';
 export { CommandPalette, type Command } from './CommandPalette';
 export { commandIcons } from './CommandIcons';
 export { ToastContainer } from './Toast';
+export { CursorProgressProvider, useCursorProgress } from './CursorProgress';

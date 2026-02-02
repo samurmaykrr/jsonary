@@ -45,45 +45,129 @@ const TEMPLATE_PATTERNS = [
 /**
  * Extract template syntax and replace with placeholders
  * 
- * Handles both quoted and unquoted templates:
- * - "{{ var }}" → "__TEMPLATE_0__" (template inside string)
- * - {{ var }} → "__TEMPLATE_0__" (unquoted template)
+ * Only extracts UNQUOTED templates that would break JSON parsing.
+ * Templates inside JSON strings are preserved automatically by JSON.stringify/JSON.parse.
+ * 
+ * Uses efficient O(n) algorithm:
+ * 1. Find all JSON string ranges in one pass
+ * 2. Find all template matches using global regex
+ * 3. Filter to only templates outside string ranges
+ * 4. Replace them with placeholders
  */
 function extractTemplates(input: string): {
   processed: string;
   placeholders: TemplatePlaceholder[];
 } {
-  let processed = input;
   const placeholders: TemplatePlaceholder[] = [];
   let placeholderIndex = 0;
 
-  for (const pattern of TEMPLATE_PATTERNS) {
-    // First, handle quoted templates: "{{ ... }}"
-    const quotedPattern = new RegExp(`"(${pattern.source})"`, pattern.flags);
-    processed = processed.replace(quotedPattern, (fullMatch) => {
-      const placeholder = `__TEMPLATE_${placeholderIndex}__`;
-      placeholders.push({
-        placeholder: `"${placeholder}"`,
-        original: fullMatch, // Store the full match including quotes
-      });
-      placeholderIndex++;
-      return `"${placeholder}"`;
-    });
+  // Step 1: Find all JSON string ranges (start, end positions)
+  const stringRanges: Array<{ start: number; end: number }> = [];
+  let i = 0;
+  let inString = false;
+  let stringStart = 0;
+  let escape = false;
 
-    // Then, handle unquoted templates: {{ ... }} 
-    const regex = new RegExp(pattern.source, pattern.flags);
-    processed = processed.replace(regex, (match) => {
-      const placeholder = `__TEMPLATE_${placeholderIndex}__`;
-      placeholders.push({
-        placeholder: `"${placeholder}"`,
-        original: match, // Store without quotes
-      });
-      placeholderIndex++;
-      return `"${placeholder}"`;
-    });
+  while (i < input.length) {
+    const char = input[i]!;
+
+    if (escape) {
+      escape = false;
+      i++;
+      continue;
+    }
+
+    if (inString && char === '\\') {
+      escape = true;
+      i++;
+      continue;
+    }
+
+    if (char === '"') {
+      if (!inString) {
+        // Entering string
+        stringStart = i;
+        inString = true;
+      } else {
+        // Exiting string
+        stringRanges.push({ start: stringStart, end: i });
+        inString = false;
+      }
+    }
+
+    i++;
   }
 
-  return { processed, placeholders };
+  // Step 2: Find all template matches
+  const allMatches: Array<{ text: string; start: number; end: number }> = [];
+  
+  for (const pattern of TEMPLATE_PATTERNS) {
+    // Create fresh regex with global flag to find all matches
+    const regex = new RegExp(pattern.source, 'g');
+    let match: RegExpExecArray | null;
+    
+    while ((match = regex.exec(input)) !== null) {
+      allMatches.push({
+        text: match[0],
+        start: match.index,
+        end: match.index + match[0].length,
+      });
+    }
+  }
+
+  // Sort matches by position
+  allMatches.sort((a, b) => a.start - b.start);
+
+  // Step 3: Filter to only templates NOT inside strings
+  const templatesToExtract: typeof allMatches = [];
+  
+  for (const match of allMatches) {
+    // Check if this match is inside any string range
+    // A template is inside a string if its start position is within the range [start, end)
+    const isInsideString = stringRanges.some(
+      range => match.start >= range.start && match.start < range.end
+    );
+    
+    if (!isInsideString) {
+      templatesToExtract.push(match);
+    }
+  }
+
+  // Step 4: Build result with placeholders using a safer approach
+  // Build the result string piece by piece to avoid index issues
+  if (templatesToExtract.length === 0) {
+    return { processed: input, placeholders: [] };
+  }
+  
+  // Sort by position (ascending) to build left-to-right
+  templatesToExtract.sort((a, b) => a.start - b.start);
+  
+  let result = '';
+  let lastEnd = 0;
+  
+  for (const match of templatesToExtract) {
+    const placeholder = `__TEMPLATE_${placeholderIndex}__`;
+    const replacement = `"${placeholder}"`;
+    
+    // Add text between last match and current match
+    result += input.slice(lastEnd, match.start);
+    
+    // Add the replacement
+    result += replacement;
+    
+    placeholders.push({
+      placeholder: replacement,
+      original: match.text,
+    });
+    placeholderIndex++;
+    
+    lastEnd = match.end;
+  }
+  
+  // Add remaining text after last match
+  result += input.slice(lastEnd);
+
+  return { processed: result, placeholders };
 }
 
 /**
@@ -163,6 +247,8 @@ export function formatJson(input: string, options: FormatOptions = {}): string {
     const extracted = extractTemplates(input);
     processedInput = extracted.processed;
     templatePlaceholders = extracted.placeholders;
+    
+    // extraction done
   }
   
   try {
@@ -170,13 +256,18 @@ export function formatJson(input: string, options: FormatOptions = {}): string {
     const indentStr = indent === 'tab' ? '\t' : ' '.repeat(indent);
     let formatted = JSON.stringify(parsed, null, indentStr);
     
+    // formatted
+    
     // Restore templates if they were extracted
     if (preserveTemplates && templatePlaceholders.length > 0) {
       formatted = restoreTemplates(formatted, templatePlaceholders);
+      // restored templates
     }
     
     return formatted;
   } catch {
+    // error during formatting - silently continue to auto-repair logic
+    
     // If JSON is invalid and autoRepair is enabled, try to repair first
     if (autoRepair) {
       const repaired = repairJson(input, { preserveTemplates });

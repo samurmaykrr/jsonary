@@ -13,18 +13,19 @@ import {
   CheckSquare,
 } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
-import { Tooltip, TransformModal, CompareModal, SchemaValidatorModal, RepairPreviewModal } from '@/components/ui';
+import { Tooltip, TransformModal, CompareModal, SchemaValidatorModal, RepairPreviewModal, useCursorProgress } from '@/components/ui';
 import { useSearch } from '@/store/useSearchStore';
 import { useActiveDocument, useActiveDocumentId, useDocument, useDocumentActions, useUndoRedo } from '@/store/useDocumentStore';
 import { usePanelLayout } from '@/store/useEditorStore';
 import { formatJson, compactJson, parseJson, repairJson, canRepairJson } from '@/lib/json';
+import { useFormatterWorker } from '@/hooks/useWorker';
 import type { ViewMode } from '@/types';
 
 interface ToolbarButtonProps {
   icon: React.ReactNode;
   label: string;
   shortcut?: string;
-  onClick: () => void;
+  onClick: (e?: React.MouseEvent) => void;
   disabled?: boolean;
   active?: boolean;
   highlight?: 'warning' | 'error';
@@ -34,7 +35,7 @@ function ToolbarButton({ icon, label, shortcut, onClick, disabled, active, highl
   return (
     <Tooltip content={label} shortcut={shortcut}>
       <button
-        onClick={onClick}
+        onClick={(e) => onClick(e)}
         disabled={disabled}
         className={cn(
           'p-1.5 rounded transition-colors',
@@ -103,6 +104,12 @@ export function EditorToolbar() {
   const { undo, redo, canUndo, canRedo } = useUndoRedo();
   const { openSearch } = useSearch();
   
+  // Worker for background processing
+  const { format: formatAsync, compact: compactAsync, isReady: isWorkerReady } = useFormatterWorker(true);
+  
+  // Cursor progress indicator
+  const { show: showProgress, hide: hideProgress } = useCursorProgress();
+  
   // Modal states
   const [transformModalOpen, setTransformModalOpen] = useState(false);
   const [compareModalOpen, setCompareModalOpen] = useState(false);
@@ -124,21 +131,54 @@ export function EditorToolbar() {
     }
   }, [currentDocId, updateContent]);
   
-  const handleFormat = useCallback(() => {
-    if (!docContent) return;
-    const formatted = formatJson(docContent);
-    if (formatted !== null) {
-      updateCurrentContent(formatted);
-    }
-  }, [docContent, updateCurrentContent]);
+  // Threshold for using worker (only use worker for large documents)
+  const WORKER_THRESHOLD = 10000; // 10KB
   
-  const handleCompact = useCallback(() => {
+  const handleFormat = useCallback(async (e?: React.MouseEvent) => {
     if (!docContent) return;
-    const compacted = compactJson(docContent);
-    if (compacted !== null) {
-      updateCurrentContent(compacted);
+    
+    // Use worker for large documents
+    if (isWorkerReady && docContent.length > WORKER_THRESHOLD) {
+      showProgress('Formatting JSON...', e);
+      try {
+        const { output, error } = await formatAsync(docContent, { indent: 2 });
+        if (!error && output !== null) {
+          updateCurrentContent(output);
+        }
+      } finally {
+        hideProgress();
+      }
+    } else {
+      // Small documents: use synchronous formatting on main thread
+      const formatted = formatJson(docContent);
+      if (formatted !== null) {
+        updateCurrentContent(formatted);
+      }
     }
-  }, [docContent, updateCurrentContent]);
+  }, [docContent, updateCurrentContent, isWorkerReady, formatAsync, showProgress, hideProgress]);
+  
+  const handleCompact = useCallback(async (e?: React.MouseEvent) => {
+    if (!docContent) return;
+    
+    // Use worker for large documents
+    if (isWorkerReady && docContent.length > WORKER_THRESHOLD) {
+      showProgress('Minifying JSON...', e);
+      try {
+        const { output, error } = await compactAsync(docContent);
+        if (!error && output !== null) {
+          updateCurrentContent(output);
+        }
+      } finally {
+        hideProgress();
+      }
+    } else {
+      // Small documents: use synchronous minification on main thread
+      const compacted = compactJson(docContent);
+      if (compacted !== null) {
+        updateCurrentContent(compacted);
+      }
+    }
+  }, [docContent, updateCurrentContent, isWorkerReady, compactAsync, showProgress, hideProgress]);
   
   const handleRepair = useCallback(() => {
     if (!docContent) return;
@@ -253,14 +293,14 @@ export function EditorToolbar() {
         </div>
         
         {/* Tools section */}
-        <ToolbarButton
-          icon={<Funnel size={18} />}
-          label="Transform & Query"
-          onClick={() => setTransformModalOpen(true)}
-          disabled={!isValidJson}
-        />
-        <div className="hidden sm:flex items-center gap-1">
           <ToolbarButton
+            icon={<Funnel size={18} />}
+            label="Transform & Query"
+            onClick={() => setTransformModalOpen(true)}
+            disabled={!isValidJson}
+          />
+        <div className="hidden sm:flex items-center gap-1">
+           <ToolbarButton
             icon={<GitDiff size={18} />}
             label="Compare JSON"
             onClick={() => setCompareModalOpen(true)}
@@ -275,30 +315,30 @@ export function EditorToolbar() {
         <ToolbarDivider />
         
         {/* Search */}
-        <ToolbarButton
-          icon={<MagnifyingGlass size={18} />}
-          label="Find"
-          shortcut="Ctrl+F"
-          onClick={() => openSearch(false)}
-        />
+          <ToolbarButton
+           icon={<MagnifyingGlass size={18} />}
+           label="Find"
+           shortcut="Ctrl+F"
+           onClick={() => openSearch(false)}
+         />
         
         <ToolbarDivider />
         
         {/* Undo/Redo */}
-        <ToolbarButton
-          icon={<ArrowCounterClockwise size={18} />}
-          label="Undo"
-          shortcut="Ctrl+Z"
-          onClick={undo}
-          disabled={!canUndo}
-        />
-        <ToolbarButton
-          icon={<ArrowClockwise size={18} />}
-          label="Redo"
-          shortcut="Ctrl+Y"
-          onClick={redo}
-          disabled={!canRedo}
-        />
+          <ToolbarButton
+           icon={<ArrowCounterClockwise size={18} />}
+           label="Undo"
+           shortcut="Ctrl+Z"
+           onClick={undo}
+           disabled={!canUndo}
+         />
+         <ToolbarButton
+           icon={<ArrowClockwise size={18} />}
+           label="Redo"
+           shortcut="Ctrl+Y"
+           onClick={redo}
+           disabled={!canRedo}
+         />
       </div>
       
       {/* Modals */}
