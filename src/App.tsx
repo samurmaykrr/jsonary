@@ -24,13 +24,15 @@ import { TextEditor } from '@/components/editor/text/TextEditor';
 import { TreeEditor } from '@/components/editor/tree/TreeEditor';
 import { TableEditor } from '@/components/editor/table/TableEditor';
 import { EditorToolbar } from '@/components/editor/EditorToolbar';
-import { SettingsModal, ToastContainer } from '@/components/ui';
+import { SettingsModal, ToastContainer, CursorProgressProvider } from '@/components/ui';
 import { GoToLineModal } from '@/components/ui/GoToLineModal';
 import { CommandPalette, type Command } from '@/components/ui/CommandPalette';
 import { commandIcons } from '@/components/ui/CommandIcons';
 import { useEditorShortcuts, useKeyboardShortcuts } from '@/hooks';
+import { useFormatterWorker } from '@/hooks/useWorker';
 import { formatJson, compactJson } from '@/lib/json';
 import { openFile, saveFile } from '@/lib/file';
+import { useCursorProgress } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import type { Document } from '@/types';
 
@@ -206,22 +208,54 @@ function KeyboardShortcutsHandler({ onOpenSettings, onOpenGoToLine }: { onOpenSe
   const { openSearch, closeSearch } = useSearch();
   const { toggleTheme } = useTheme();
   const { goToError } = useEditor();
+  // Worker for background processing (use for large documents)
+  const WORKER_THRESHOLD = 10000; // 10KB
+  const { format: formatAsync, compact: compactAsync, isReady: isWorkerReady } = useFormatterWorker(true);
+  // Cursor progress indicator
+  const { show: showProgress, hide: hideProgress } = useCursorProgress();
   
   const handleSave = useCallback(async () => {
     if (!doc) return;
-    
-    const content = formatJson(doc.content) ?? doc.content;
-    const result = await saveFile(content, {
-      suggestedName: doc.name.endsWith('.json') ? doc.name : `${doc.name}.json`,
-    });
-    
-    if (result.success) {
-      if (result.name) {
-        renameDocument(doc.id, result.name);
+
+    // For large documents use the formatter worker to pretty-print before saving
+    if (isWorkerReady && doc.content.length > WORKER_THRESHOLD) {
+      showProgress('Formatting JSON...');
+      let formatted: string | null = null;
+      try {
+        const { output, error } = await formatAsync(doc.content, { indent: 2 });
+        if (!error && output !== null) {
+          formatted = output;
+        }
+      } finally {
+        hideProgress();
       }
-      markSaved(doc.id);
+
+      const contentToSave = formatted ?? doc.content;
+      const result = await saveFile(contentToSave, {
+        suggestedName: doc.name.endsWith('.json') ? doc.name : `${doc.name}.json`,
+      });
+
+      if (result.success) {
+        if (result.name) {
+          renameDocument(doc.id, result.name);
+        }
+        markSaved(doc.id);
+      }
+    } else {
+      // Small documents: format synchronously on main thread
+      const content = formatJson(doc.content) ?? doc.content;
+      const result = await saveFile(content, {
+        suggestedName: doc.name.endsWith('.json') ? doc.name : `${doc.name}.json`,
+      });
+
+      if (result.success) {
+        if (result.name) {
+          renameDocument(doc.id, result.name);
+        }
+        markSaved(doc.id);
+      }
     }
-  }, [doc, renameDocument, markSaved]);
+  }, [doc, renameDocument, markSaved, isWorkerReady, formatAsync, showProgress, hideProgress]);
   
   const handleOpen = useCallback(async () => {
     const result = await openFile();
@@ -255,22 +289,42 @@ function KeyboardShortcutsHandler({ onOpenSettings, onOpenGoToLine }: { onOpenSe
         closeDocument(activeDocId);
       }
     },
-    onFormat: () => {
-      if (doc?.content) {
+    onFormat: useCallback(async () => {
+      if (!doc?.content) return;
+
+      if (isWorkerReady && doc.content.length > WORKER_THRESHOLD) {
+        showProgress('Formatting JSON...');
+        try {
+          const { output, error } = await formatAsync(doc.content, { indent: 2 });
+          if (!error && output !== null) {
+            updateContent(output);
+          }
+        } finally {
+          hideProgress();
+        }
+      } else {
         const formatted = formatJson(doc.content);
-        if (formatted !== null) {
-          updateContent(formatted);
-        }
+        if (formatted !== null) updateContent(formatted);
       }
-    },
-    onCompact: () => {
-      if (doc?.content) {
+    }, [doc, updateContent, isWorkerReady, formatAsync, showProgress, hideProgress]),
+    onCompact: useCallback(async () => {
+      if (!doc?.content) return;
+
+      if (isWorkerReady && doc.content.length > WORKER_THRESHOLD) {
+        showProgress('Minifying JSON...');
+        try {
+          const { output, error } = await compactAsync(doc.content);
+          if (!error && output !== null) {
+            updateContent(output);
+          }
+        } finally {
+          hideProgress();
+        }
+      } else {
         const compacted = compactJson(doc.content);
-        if (compacted !== null) {
-          updateContent(compacted);
-        }
+        if (compacted !== null) updateContent(compacted);
       }
-    },
+    }, [doc, updateContent, isWorkerReady, compactAsync, showProgress, hideProgress]),
     onUndo: () => {
       undo();
     },
@@ -600,14 +654,16 @@ function App() {
   return (
     <SettingsProvider>
       <ToastProvider>
-        <DocumentProvider>
-          <SearchProvider>
-            <EditorProvider>
-              <AppContent />
-              <ToastContainer />
-            </EditorProvider>
-          </SearchProvider>
-        </DocumentProvider>
+        <CursorProgressProvider>
+          <DocumentProvider>
+            <SearchProvider>
+              <EditorProvider>
+                <AppContent />
+                <ToastContainer />
+              </EditorProvider>
+            </SearchProvider>
+          </DocumentProvider>
+        </CursorProgressProvider>
       </ToastProvider>
     </SettingsProvider>
   );
