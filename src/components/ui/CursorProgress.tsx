@@ -56,8 +56,6 @@ export function CursorProgressProvider({ children }: CursorProgressProviderProps
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       mousePosRef.current = { x: e.clientX, y: e.clientY };
-      // Debug
-      console.log('[CursorProgress] mousemove', mousePosRef.current);
 
       // Update position if visible
       setState(prev => {
@@ -71,7 +69,6 @@ export function CursorProgressProvider({ children }: CursorProgressProviderProps
       // most recent coordinates when the user clicks - helps when show()
       // is called without an event.
       mousePosRef.current = { x: e.clientX, y: e.clientY };
-      console.log('[CursorProgress] pointerdown', mousePosRef.current);
       // Update visible indicator immediately if currently visible
       setState(prev => {
         if (!prev.isVisible) return prev;
@@ -98,16 +95,12 @@ export function CursorProgressProvider({ children }: CursorProgressProviderProps
         y = ev.clientY;
       }
 
-      // Debug
-      console.log('[CursorProgress] show', { message, x, y, event: ev });
-
       setState({ isVisible: true, message, x, y });
     },
     []
   );
 
   const hide = useCallback(() => {
-    console.log('[CursorProgress] hide');
     setState(prev => ({ ...prev, isVisible: false }));
   }, []);
 
@@ -147,9 +140,6 @@ function CursorProgressIndicator({ state }: CursorProgressIndicatorProps) {
   // Default position (will update based on viewport)
   const posX = x + offsetX;
   const posY = y + offsetY;
-
-  // Debug
-  console.log('[CursorProgress] render indicator', { x, y, posX, posY, message });
 
   return createPortal(
     <div
