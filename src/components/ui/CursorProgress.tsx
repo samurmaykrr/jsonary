@@ -1,6 +1,7 @@
-import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils';
+import { CursorProgressContext, type CursorProgressContextValue, type CursorProgressState } from './CursorProgressContext';
 
 // Simple spinner component since it doesn't exist
 function Spinner({ size = 'sm', className }: { size?: 'sm' | 'md' | 'lg'; className?: string }) {
@@ -19,48 +20,6 @@ function Spinner({ size = 'sm', className }: { size?: 'sm' | 'md' | 'lg'; classN
       )}
     />
   );
-}
-
-// ============================================
-// Types
-// ============================================
-
-export interface CursorProgressState {
-  isVisible: boolean;
-  message: string;
-  x: number;
-  y: number;
-}
-
-export interface CursorProgressContextValue {
-  // show may be called with an optional mouse event or coord object so
-  // the indicator can appear exactly where the user clicked.
-  show: (
-    message: string,
-    ev?: MouseEvent | PointerEvent | { clientX: number; clientY: number }
-  ) => void;
-  hide: () => void;
-  isVisible: boolean;
-}
-
-// ============================================
-// Context
-// ============================================
-
-// eslint-disable-next-line react-refresh/only-export-components
-export const CursorProgressContext = createContext<CursorProgressContextValue | null>(null);
-
-// ============================================
-// Hook
-// ============================================
-
-// eslint-disable-next-line react-refresh/only-export-components
-export function useCursorProgress(): CursorProgressContextValue {
-  const context = useContext(CursorProgressContext);
-  if (!context) {
-    throw new Error('useCursorProgress must be used within CursorProgressProvider');
-  }
-  return context;
 }
 
 // Type guard to check if the event has client coordinates
