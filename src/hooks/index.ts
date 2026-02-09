@@ -12,3 +12,5 @@ export {
   createDiffWorker,
   createValidateWorker,
 } from './useWorker';
+export { useReducedMotion } from './useReducedMotion';
+export { useTouchDevice, useHoverCapability } from './useTouchDevice';

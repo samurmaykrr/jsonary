@@ -31,11 +31,18 @@ interface ToastItemProps {
   onDismiss: (id: string) => void;
 }
 
+/**
+ * Toast notification following Emil's Design Engineering principles:
+ * - Fast animations: 200ms enter (ease-out), 150ms exit (ease-in)
+ * - Specific property animations (transform + opacity)
+ * - Consistent z-index scale
+ * - Touch-friendly dismiss button (44px tap target on mobile)
+ */
 function ToastItem({ toast, onDismiss }: ToastItemProps) {
   const [isExiting, setIsExiting] = useState(false);
   const [progress, setProgress] = useState(100);
 
-  // Animate progress bar
+  // Animate progress bar using requestAnimationFrame for smooth performance
   useEffect(() => {
     if (!toast.duration || toast.duration <= 0) return;
 
@@ -59,9 +66,10 @@ function ToastItem({ toast, onDismiss }: ToastItemProps) {
 
   const handleDismiss = () => {
     setIsExiting(true);
+    // Match exit animation duration (150ms)
     setTimeout(() => {
       onDismiss(toast.id);
-    }, 150); // Match animation duration
+    }, 150);
   };
 
   return (
@@ -71,8 +79,9 @@ function ToastItem({ toast, onDismiss }: ToastItemProps) {
         'relative overflow-hidden rounded-lg border shadow-lg',
         'bg-bg-surface backdrop-blur-sm',
         'min-w-72 max-w-96',
-        'animate-slide-in-right',
         toastStyles[toast.type],
+        // Animations: 200ms enter (ease-out), 150ms exit (ease-in)
+        !isExiting && 'animate-slide-in-right',
         isExiting && 'animate-slide-out-right'
       )}
     >
@@ -94,11 +103,11 @@ function ToastItem({ toast, onDismiss }: ToastItemProps) {
           )}
         </div>
 
-        {/* Dismiss button */}
+        {/* Dismiss button - 44px tap target on mobile */}
         {toast.dismissible && (
           <button
             onClick={handleDismiss}
-            className="flex-shrink-0 p-1 rounded hover:bg-bg-hover transition-colors"
+            className="flex-shrink-0 p-1 rounded min-h-[44px] sm:min-h-0 min-w-[44px] sm:min-w-0 flex items-center justify-center transition-colors duration-150 ease-out hover:bg-bg-hover"
             aria-label="Dismiss notification"
           >
             <X className="w-4 h-4 text-text-tertiary" />
@@ -106,7 +115,7 @@ function ToastItem({ toast, onDismiss }: ToastItemProps) {
         )}
       </div>
 
-      {/* Progress bar */}
+      {/* Progress bar - smooth linear transition */}
       {toast.duration && toast.duration > 0 && (
         <div className="absolute bottom-0 left-0 right-0 h-1 bg-border-subtle">
           <div
@@ -136,7 +145,9 @@ export function ToastContainer() {
 
   return (
     <div
-      className="fixed bottom-4 right-4 z-50 flex flex-col gap-2"
+      className="fixed bottom-4 right-4 flex flex-col gap-2"
+      // Use consistent z-index scale (toasts should be above modals)
+      style={{ zIndex: 'var(--z-tooltip)' }}
       role="region"
       aria-label="Notifications"
     >

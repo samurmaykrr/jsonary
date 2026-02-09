@@ -22,6 +22,14 @@ export interface ModalProps {
   footer?: ReactNode;
 }
 
+/**
+ * Modal component following Emil's Design Engineering principles:
+ * - Fast animations: 200ms for modals (user-initiated, not seen 100+ times daily)
+ * - ease-out for entering elements
+ * - Proper keyboard navigation and focus management
+ * - Consistent z-index scale
+ * - Touch-friendly close button
+ */
 export function Modal({
   isOpen,
   onClose,
@@ -61,7 +69,7 @@ export function Modal({
     };
   }, [isOpen]);
   
-  // Focus trap
+  // Focus trap with improved keyboard navigation
   useEffect(() => {
     if (!isOpen || !modalRef.current) return;
     
@@ -72,17 +80,22 @@ export function Modal({
     const firstElement = focusableElements[0];
     const lastElement = focusableElements[focusableElements.length - 1];
     
-    firstElement?.focus();
+    // Focus first element after a short delay to let animation start
+    requestAnimationFrame(() => {
+      firstElement?.focus();
+    });
     
     const handleTabKey = (e: globalThis.KeyboardEvent) => {
       if (e.key !== 'Tab') return;
       
       if (e.shiftKey) {
+        // Shift + Tab: move backwards
         if (document.activeElement === firstElement) {
           lastElement?.focus();
           e.preventDefault();
         }
       } else {
+        // Tab: move forwards
         if (document.activeElement === lastElement) {
           firstElement?.focus();
           e.preventDefault();
@@ -114,29 +127,36 @@ export function Modal({
   
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4"
+      className="fixed inset-0 flex items-center justify-center p-0 sm:p-4"
+      // Use consistent z-index scale
+      style={{ zIndex: 'var(--z-modal)' }}
       role="dialog"
       aria-modal="true"
       aria-labelledby={title ? 'modal-title' : undefined}
     >
-      {/* Overlay */}
+      {/* Overlay - fade in with ease-out */}
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        style={{
+          animation: 'fade-in 0.2s ease-out',
+        }}
         onClick={handleOverlayClick}
       />
       
-      {/* Modal */}
+      {/* Modal - slide up and fade in with ease-out */}
       <div
         ref={modalRef}
         className={cn(
           'relative w-full bg-bg-elevated shadow-xl',
           'border-0 sm:border border-border-default',
-          'animate-in fade-in zoom-in-95 duration-200',
           // Full screen on mobile, constrained on desktop
           'h-full sm:h-auto sm:max-h-[90vh]',
           'rounded-none sm:rounded-lg',
           sizeClasses[size]
         )}
+        style={{
+          animation: 'slide-up 0.2s ease-out',
+        }}
       >
         {/* Header */}
         {(title || showCloseButton) && (
@@ -155,7 +175,7 @@ export function Modal({
                 size="sm"
                 onClick={onClose}
                 className="ml-auto -mr-1"
-                aria-label="Close"
+                aria-label="Close modal"
               >
                 <X className="w-4 h-4" />
               </Button>
@@ -163,8 +183,8 @@ export function Modal({
           </div>
         )}
         
-        {/* Content */}
-        <div className="px-4 py-4 overflow-y-auto max-h-[calc(100vh-8rem)] sm:max-h-none">
+        {/* Content - custom scrollbar only in this small element */}
+        <div className="px-4 py-4 overflow-y-auto max-h-[calc(100vh-8rem)] sm:max-h-none custom-scrollbar">
           {children}
         </div>
         
