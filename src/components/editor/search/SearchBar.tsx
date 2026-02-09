@@ -142,10 +142,14 @@ export function SearchBar({
   return (
     <div
       className={cn(
-        'absolute top-0 right-0 sm:right-4 left-0 sm:left-auto z-50',
+        'absolute top-0 right-0 sm:right-4 left-0 sm:left-auto',
         'bg-bg-elevated border border-border-default rounded-none sm:rounded-lg shadow-lg',
         'p-2 space-y-2'
       )}
+      style={{
+        // Use consistent z-index scale (sticky level - should be above content but below tooltips)
+        zIndex: 'var(--z-sticky)',
+      }}
       onKeyDown={handleKeyDown}
     >
       {/* Search Row */}

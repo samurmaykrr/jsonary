@@ -295,7 +295,7 @@ export function TextEditor() {
   const uiSettings = useUISettings();
   const { state: editorState, clearEvent } = useEditor();
   const validationErrors = useValidationErrors();
-  const { state: searchState, openSearch } = useSearch();
+  const { state: searchState, openSearch, closeSearch } = useSearch();
 
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const monacoRef = useRef<Monaco | null>(null);
@@ -350,9 +350,28 @@ export function TextEditor() {
       editor.getAction('editor.action.gotoLine')?.run();
     });
 
+    /**
+     * Sync search state when Escape closes Monaco's find widget.
+     * 
+     * We use addAction with a precondition so our handler runs ALONGSIDE
+     * Monaco's default Escape behavior (which closes the find widget).
+     * editor.addCommand would completely replace the keybinding, preventing
+     * Monaco from closing its own widget and causing state desync.
+     */
+    editor.addAction({
+      id: 'jsonary.closeFindWidget',
+      label: 'Close Find Widget',
+      keybindings: [monaco.KeyCode.Escape],
+      // Only fire when the find widget is visible
+      precondition: 'findWidgetVisible',
+      run: () => {
+        closeSearch();
+      },
+    });
+
     // Focus the editor
     editor.focus();
-  }, [openSearch]);
+  }, [openSearch, closeSearch]);
 
   // Handle content changes
   const handleEditorChange = useCallback((value: string | undefined) => {
@@ -451,10 +470,12 @@ export function TextEditor() {
     const editor = editorRef.current;
 
     if (searchState.isOpen) {
-      // Trigger Monaco's find action
-      const action = searchState.showReplace
-        ? editor.getAction('editor.action.startFindReplaceAction')
-        : editor.getAction('editor.action.startFindReplaceAction');
+      // Open the appropriate find variant based on showReplace flag
+      const actionId = searchState.showReplace
+        ? 'editor.action.startFindReplaceAction'
+        : 'actions.find';
+
+      const action = editor.getAction(actionId);
       action?.run();
     } else {
       // Close find widget
@@ -470,8 +491,52 @@ export function TextEditor() {
     }
   }, [isTextMode, searchState.isOpen]);
 
+  /**
+   * Event-driven sync between Monaco's find widget visibility and our search state.
+   * 
+   * Instead of polling every 200ms, we listen to the find controller's
+   * state change event for instant, reliable synchronization. This handles:
+   * - User clicking X button on find widget
+   * - Find widget closing programmatically
+   * - Any close scenario not covered by our Escape action
+   */
+  useEffect(() => {
+    if (!editorRef.current) return;
+
+    const editor = editorRef.current;
+    const findController = editor.getContribution?.('editor.contrib.findController') as unknown as {
+      getState: () => {
+        isRevealed: boolean;
+        onFindReplaceStateChange: (listener: (e: unknown) => void) => { dispose: () => void };
+      };
+    } | undefined;
+
+    if (!findController) return;
+
+    const findState = findController.getState?.();
+    if (!findState?.onFindReplaceStateChange) {
+      // Fallback to polling if the event API is unavailable
+      const interval = setInterval(() => {
+        const isRevealed = findController.getState?.().isRevealed ?? false;
+        if (!isRevealed && searchState.isOpen) {
+          closeSearch();
+        }
+      }, 200);
+      return () => clearInterval(interval);
+    }
+
+    const disposable = findState.onFindReplaceStateChange(() => {
+      const isRevealed = findController.getState?.().isRevealed ?? false;
+      if (!isRevealed && searchState.isOpen) {
+        closeSearch();
+      }
+    });
+
+    return () => disposable.dispose();
+  }, [searchState.isOpen, closeSearch]);
+
   return (
-    <div className="h-full w-full">
+    <div className="h-full w-full overflow-hidden">
       <Editor
         height="100%"
         language="json"
@@ -520,6 +585,11 @@ export function TextEditor() {
             verticalScrollbarSize: 10,
             horizontalScrollbarSize: 10,
             useShadows: false,
+          },
+          find: {
+            addExtraSpaceOnTop: false,
+            autoFindInSelection: 'never',
+            seedSearchStringFromSelection: 'always',
           },
         }}
         loading={

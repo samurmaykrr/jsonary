@@ -376,8 +376,8 @@ export function Header() {
               
               {menuOpen === 'file' && (
                 <>
-                  <div className="fixed inset-0 z-40" onClick={closeMenu} />
-                  <div className="absolute top-full left-0 mt-1 w-48 bg-bg-elevated border border-border-default rounded-lg shadow-xl z-50 py-1">
+                  <div className="fixed inset-0" style={{ zIndex: 'var(--z-overlay)' }} onClick={closeMenu} />
+                  <div className="absolute top-full left-0 mt-1 w-48 bg-bg-elevated border border-border-default rounded-lg shadow-xl py-1" style={{ zIndex: 'var(--z-popover)' }}>
                     <button
                       onClick={handleOpenFile}
                       className="w-full px-3 py-1.5 text-sm text-left text-text-secondary hover:text-text-primary hover:bg-bg-hover flex items-center gap-2"
@@ -481,8 +481,8 @@ export function Header() {
               
               {menuOpen === 'tools' && (
                 <>
-                  <div className="fixed inset-0 z-40" onClick={closeMenu} />
-                  <div className="absolute top-full left-0 mt-1 w-52 bg-bg-elevated border border-border-default rounded-lg shadow-xl z-50 py-1">
+                  <div className="fixed inset-0" style={{ zIndex: 'var(--z-overlay)' }} onClick={closeMenu} />
+                  <div className="absolute top-full left-0 mt-1 w-52 bg-bg-elevated border border-border-default rounded-lg shadow-xl py-1" style={{ zIndex: 'var(--z-popover)' }}>
                     <button
                       onClick={() => { setTransformModalOpen(true); closeMenu(); }}
                       disabled={!activeDoc}
@@ -673,7 +673,7 @@ export function Header() {
       
       {/* Mobile Menu Drawer */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 sm:hidden">
+        <div className="fixed inset-0 sm:hidden" style={{ zIndex: 'var(--z-modal)' }}>
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
           <div className="absolute top-0 left-0 w-64 h-full bg-bg-elevated border-r border-border-default shadow-xl overflow-y-auto">
             {/* Mobile Menu Header */}
@@ -788,7 +788,7 @@ export function Header() {
       
       {/* CSV Preview Modal */}
       {csvModalOpen && csvPreview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4">
+        <div className="fixed inset-0 flex items-center justify-center p-0 sm:p-4" style={{ zIndex: 'var(--z-modal)' }}>
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => { setCsvModalOpen(false); setCsvPreview(null); }} />
           <div className="relative w-full h-full sm:h-auto sm:max-w-2xl bg-bg-elevated rounded-none sm:rounded-lg shadow-xl border-0 sm:border border-border-default sm:max-h-[80vh] flex flex-col">
             <div className="px-4 py-3 border-b border-border-default">
@@ -843,7 +843,7 @@ export function Header() {
       
       {/* URL Modal */}
       {urlModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div className="fixed inset-0 flex items-end sm:items-center justify-center p-0 sm:p-4" style={{ zIndex: 'var(--z-modal)' }}>
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setUrlModalOpen(false)} />
           <div className="relative w-full sm:max-w-md bg-bg-elevated rounded-t-lg sm:rounded-lg shadow-xl border-0 sm:border border-border-default">
             <div className="px-4 py-3 border-b border-border-default">
@@ -910,7 +910,7 @@ export function Header() {
       
       {/* Split Document Selector Modal */}
       {splitDocModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div className="fixed inset-0 flex items-end sm:items-center justify-center p-0 sm:p-4" style={{ zIndex: 'var(--z-modal)' }}>
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSplitDocModalOpen(false)} />
           <div className="relative w-full sm:max-w-sm bg-bg-elevated rounded-t-lg sm:rounded-lg shadow-xl border-0 sm:border border-border-default">
             <div className="px-4 py-3 border-b border-border-default">

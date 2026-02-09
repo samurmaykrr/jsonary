@@ -210,13 +210,33 @@
   --text-2xs: 0.625rem;
   --text-2xs--line-height: 0.75rem;
   
-  /* Animations */
+  /* Animations - Using Emil's Design Principles
+     - Fast transitions: 150-200ms for UI elements
+     - Use ease-out for entering elements
+     - Use ease-in for exiting elements  
+  */
   --animate-border-beam: border-beam 4s linear infinite;
-  --animate-fade-in: fade-in 0.2s ease-out;
+  --animate-fade-in: fade-in 0.15s ease-out;
   --animate-slide-up: slide-up 0.2s ease-out;
   --animate-pulse-subtle: pulse-subtle 2s ease-in-out infinite;
   --animate-slide-in-right: slide-in-right 0.2s ease-out;
   --animate-slide-out-right: slide-out-right 0.15s ease-in forwards;
+  
+  /* Z-index scale - Consistent layering system
+     Order from lowest to highest:
+     - Dropdown menus: 1000
+     - Sticky headers: 1020
+     - Overlays (backdrop): 1030
+     - Modals: 1040
+     - Popovers/Context menus: 1050
+     - Tooltips: 9999 (highest - always on top)
+  */
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-overlay: 1030;
+  --z-modal: 1040;
+  --z-popover: 1050;
+  --z-tooltip: 9999;
 }
 
 @keyframes border-beam {
@@ -262,6 +282,21 @@
 }
 
 /* ============================================
+   Reduced Motion Support (Accessibility)
+   ============================================ */
+/* Respect user's motion preferences - disable animations if requested */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================
    Base Styles
    ============================================ */
 *,
@@ -290,25 +325,27 @@ body {
 /* ============================================
    Scrollbar Styles
    ============================================ */
-::-webkit-scrollbar {
+/* Note: Only customize scrollbars in small elements like modals/panels
+   Per Emil's principles: Don't customize page-level scrollbars */
+.custom-scrollbar::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
-::-webkit-scrollbar-track {
+.custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
 
-::-webkit-scrollbar-thumb {
+.custom-scrollbar::-webkit-scrollbar-thumb {
   background: var(--border-default);
   border-radius: 4px;
 }
 
-::-webkit-scrollbar-thumb:hover {
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: var(--border-strong);
 }
 
-::-webkit-scrollbar-corner {
+.custom-scrollbar::-webkit-scrollbar-corner {
   background: transparent;
 }
 
@@ -415,7 +452,7 @@ body {
   }
 }
 
-/* Touch-friendly tap targets (minimum 44x44px) */
+/* Touch-friendly tap targets (minimum 44x44px per Apple HIG) */
 @media (max-width: 639px) {
   .touch-target {
     min-width: 44px;
@@ -423,7 +460,7 @@ body {
   }
 }
 
-/* Mobile-safe padding */
+/* Mobile-safe padding (respect safe areas) */
 @media (max-width: 639px) {
   .mobile-padding {
     padding-left: max(0.5rem, env(safe-area-inset-left));
@@ -437,4 +474,66 @@ body {
     width: 100% !important;
     max-width: 100% !important;
   }
+}
+
+/* ============================================
+   Touch Device Utilities
+   ============================================ */
+/* Disable hover effects on touch devices
+   Touch devices don't have a true hover state
+   Hover effects can feel broken on touch */
+@media (hover: none) {
+  .hover-only {
+    display: none !important;
+  }
+  
+  /* Remove all hover state transitions on touch devices */
+  button:hover,
+  a:hover,
+  [role="button"]:hover {
+    /* Prevent accidental hover state flash on tap */
+    transition: none !important;
+  }
+}
+
+/* Enable hover effects only on devices with hover capability */
+@media (hover: hover) {
+  .touch-only {
+    display: none !important;
+  }
+}
+
+/* ============================================
+   Monaco Editor Overrides
+   ============================================ */
+
+/**
+ * Fix Monaco Editor find/replace widget overflow
+ * The find widget is positioned absolutely and can extend beyond viewport
+ * This constrains it to stay within the editor bounds
+ */
+.monaco-editor .find-widget {
+  max-width: calc(100vw - 32px) !important;
+  right: 16px !important;
+  box-sizing: border-box !important;
+}
+
+/**
+ * Ensure the find widget input fields wrap properly on small screens
+ */
+.monaco-editor .find-widget .monaco-findInput,
+.monaco-editor .find-widget .replace-input {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/**
+ * Prevent horizontal scrolling caused by Monaco widgets
+ */
+.monaco-editor {
+  overflow: hidden !important;
+}
+
+.monaco-editor .overflow-guard {
+  overflow: hidden !important;
 }

@@ -21,7 +21,11 @@ interface ContextMenuProps {
 }
 
 /**
- * Context menu component that appears at a specific position
+ * Context menu component following Emil's Design Engineering principles:
+ * - Fast transitions (150ms ease-out)
+ * - Proper keyboard navigation
+ * - Consistent z-index scale
+ * - Touch-friendly tap targets on mobile
  */
 export function ContextMenu({ items, x, y, onClose }: ContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
@@ -70,7 +74,7 @@ export function ContextMenu({ items, x, y, onClose }: ContextMenuProps) {
       }
     };
     
-    // Close on escape
+    // Close on escape + keyboard navigation
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         onClose();
@@ -128,11 +132,18 @@ export function ContextMenu({ items, x, y, onClose }: ContextMenuProps) {
     <div
       ref={menuRef}
       className={cn(
-        'fixed z-[100] min-w-[180px] py-1',
+        'fixed min-w-[180px] py-1',
         'bg-bg-elevated border border-border-default rounded-lg shadow-lg',
         'outline-none'
       )}
-      style={{ left: position.x, top: position.y }}
+      style={{ 
+        left: position.x, 
+        top: position.y,
+        // Use consistent z-index scale (popover level)
+        zIndex: 'var(--z-popover)',
+        // Fast animation: 150ms fade in (ease-out)
+        animation: 'fade-in 0.15s ease-out',
+      }}
       tabIndex={-1}
     >
       {items.map((item, index) => {
@@ -150,8 +161,11 @@ export function ContextMenu({ items, x, y, onClose }: ContextMenuProps) {
             key={item.id}
             className={cn(
               'w-full px-3 py-1.5 text-sm text-left',
+              // 44px min height on mobile for touch targets
+              'min-h-[44px] sm:min-h-0',
               'flex items-center gap-2',
-              'transition-colors',
+              // Specific property transition
+              'transition-colors duration-150 ease-out',
               item.disabled
                 ? 'text-text-disabled cursor-not-allowed'
                 : item.danger

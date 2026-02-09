@@ -39,6 +39,14 @@ function formatShortcut(shortcut: string): string {
   return shortcut;
 }
 
+/**
+ * Tooltip component following Emil's Design Engineering principles:
+ * - Fast animations: 100ms fade in (ease-out)
+ * - No hover effects on touch devices (tooltips don't work well on touch)
+ * - Proper keyboard support (show on focus)
+ * - Consistent z-index scale
+ * - Respects reduced motion preference
+ */
 export function Tooltip({
   content,
   children,
@@ -265,15 +273,20 @@ export function Tooltip({
           <div
             ref={tooltipRef}
             className={cn(
-              'fixed z-50 px-2 py-1 text-xs font-medium',
+              'fixed px-2 py-1 text-xs font-medium',
               'bg-bg-elevated text-text-primary',
               'border border-border-default rounded shadow-lg',
-              'animate-in fade-in zoom-in-95 duration-100',
               'flex items-center gap-2',
               positionClasses[position],
               className
             )}
-            style={coords}
+            style={{
+              ...coords,
+              // Use consistent z-index scale - tooltips are always on top
+              zIndex: 9999,
+              // Fast animation: 100ms fade in (ease-out)
+              animation: 'fade-in 0.1s ease-out',
+            }}
             role="tooltip"
           >
             <span>{content}</span>
