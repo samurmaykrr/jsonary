@@ -1,4 +1,4 @@
-import { parse as parseToml, stringify as stringifyToml } from 'smol-toml';
+import * as TOML from '@iarna/toml';
 import { parseJson } from '../json/parser';
 
 /**
@@ -21,7 +21,8 @@ export function jsonToToml(jsonString: string): { toml: string } | { error: stri
     }
 
     // Convert to TOML
-    const tomlString = stringifyToml(parsed.value as Record<string, unknown>);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const tomlString = TOML.stringify(parsed.value as any);
 
     return { toml: tomlString };
   } catch (error) {
@@ -37,7 +38,7 @@ export function jsonToToml(jsonString: string): { toml: string } | { error: stri
 export function tomlToJson(tomlString: string): { json: string } | { error: string } {
   try {
     // Parse TOML
-    const parsed = parseToml(tomlString);
+    const parsed = TOML.parse(tomlString);
 
     // Convert to JSON string
     const jsonString = JSON.stringify(parsed, null, 2);

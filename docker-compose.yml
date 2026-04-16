@@ -26,7 +26,7 @@ services:
       - /app/node_modules
     ports:
       - "5173:5173"
-    command: sh -c "npm install -g bun && bun install && bun run dev -- --host"
+    command: sh -c "corepack enable && corepack prepare pnpm@latest --activate && pnpm install && pnpm dev -- --host"
     environment:
       - NODE_ENV=development
     stdin_open: true

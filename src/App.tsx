@@ -1,5 +1,4 @@
 import { useCallback, useState } from 'react';
-import { Analytics } from '@vercel/analytics/next';
 import { DocumentProvider, DocumentOverrideProvider } from '@/store/documentStore';
 import { SearchProvider } from '@/store/searchStore';
 import { EditorProvider } from '@/store/editorStore';
@@ -661,8 +660,6 @@ function App() {
               <EditorProvider>
                 <AppContent />
                 <ToastContainer />
-                {/* Keep analytics mounted once at app root to track page usage globally. */}
-                <Analytics />
               </EditorProvider>
             </SearchProvider>
           </DocumentProvider>

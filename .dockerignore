@@ -1,4 +1,5 @@
 node_modules
+.pnpm-store
 dist
 coverage
 .git
@@ -20,3 +21,4 @@ CHANGELOG.md
 tests
 *.test.ts
 *.test.tsx
+.husky
