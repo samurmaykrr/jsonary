@@ -17,9 +17,8 @@ Thank you for your interest in contributing to Jsonary! This document provides g
 
 ### Prerequisites
 
-- **Node.js**: Version 25.2.1 (specified in `.nvmrc`)
-  - Use [nvm](https://github.com/nvm-sh/nvm) for easy version management: `nvm use`
-- **npm**: Comes with Node.js
+- **Bun**: Version 1.3.11 or newer
+- **Node.js**: Version 20+ (for compatibility with tooling and CI)
 - **Git**: For version control
 
 ### Fork and Clone
@@ -37,38 +36,39 @@ Thank you for your interest in contributing to Jsonary! This document provides g
 
 ## Development Setup
 
-1. **Install Node.js version** (using nvm):
+1. **Install Bun runtime**:
    ```bash
-   nvm use
+   curl -fsSL https://bun.sh/install | bash
+   bun --version
    ```
 
 2. **Install dependencies**:
    ```bash
-   pnpm install
+   bun install
    ```
 
 3. **Start development server**:
    ```bash
-   pnpm dev
+   bun run dev
    ```
    The app will be available at `http://localhost:5173`
 
 4. **Run tests**:
    ```bash
-   pnpm test              # Run tests in watch mode
-   pnpm test:run          # Run tests once
-   pnpm test:coverage     # Run with coverage report
+   bun run test              # Run tests in watch mode
+   bun run test:run          # Run tests once
+   bun run test:coverage     # Run with coverage report
    ```
 
 5. **Run linter**:
    ```bash
-   pnpm lint
+   bun run lint
    ```
 
 6. **Build for production**:
    ```bash
-   pnpm build
-   pnpm preview  # Preview production build
+   bun run build
+   bun run preview  # Preview production build
    ```
 
 ## Project Structure
@@ -123,7 +123,7 @@ Branch naming conventions:
 
 ### Git Hooks
 
-We use Husky and lint-staged for pre-commit checks:
+We use lint-staged for pre-commit checks:
 - ESLint runs automatically on staged files
 - Tests run for affected files
 - If checks fail, the commit is blocked
@@ -200,10 +200,10 @@ describe('YourComponent', () => {
 ### Running Tests
 
 ```bash
-pnpm test                   # Watch mode
-pnpm test:run              # Single run
-pnpm test:coverage         # With coverage
-pnpm test:browser          # Browser mode
+bun run test                   # Watch mode
+bun run test:run              # Single run
+bun run test:coverage         # With coverage
+bun run test:browser          # Browser mode
 ```
 
 ### Coverage Reports
@@ -224,9 +224,9 @@ pnpm test:browser          # Browser mode
 
 2. **Run full test suite**:
    ```bash
-   pnpm test:run
-   pnpm lint
-   pnpm build
+   bun run test:run
+   bun run lint
+   bun run build
    ```
 
 3. **Update documentation** if needed

@@ -8,10 +8,48 @@ import { fileURLToPath } from 'url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
+/**
+ * Keep production bundles below warning thresholds by splitting third-party
+ * dependencies into stable per-package chunks.
+ *
+ * Why this approach:
+ * - This project is a single-page app with many editor-focused dependencies.
+ * - Without explicit chunking, Rollup tends to produce one very large vendor
+ *   chunk that triggers Vite's 500 kB warning and slows initial parse time.
+ * - Per-package chunking keeps cacheability high and reduces first-load work.
+ */
+function getVendorChunkName(id: string): string | undefined {
+  if (!id.includes('node_modules')) return undefined
+
+  const normalizedId = id.replace(/\\/g, '/')
+  const packagePath = normalizedId.split('/node_modules/').at(-1)
+  if (!packagePath) return 'vendor-misc'
+
+  const [first, second] = packagePath.split('/')
+  if (!first) return 'vendor-misc'
+
+  const packageName = first.startsWith('@') && second
+    ? `${first}/${second}`
+    : first
+
+  if (packageName) {
+    return `vendor-${packageName.replace('/', '-')}`
+  }
+
+  return 'vendor-misc'
+}
+
 // https://vite.dev/config/
 export default defineConfig({
   define: {
     global: 'globalThis',
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: getVendorChunkName,
+      },
+    },
   },
   test: {
     globals: true,
@@ -101,6 +139,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      'next/navigation.js': path.resolve(__dirname, './src/shims/next-navigation.ts'),
     },
   },
 })

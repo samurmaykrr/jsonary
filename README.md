@@ -74,7 +74,7 @@ A feature-rich, browser-based JSON editor built with React and TypeScript. Edit 
 - **AJV** - JSON Schema validation
 - **jsonrepair** - JSON repair
 - **js-yaml** - YAML conversion
-- **@iarna/toml** - TOML conversion
+- **smol-toml** - TOML conversion
 - **toon** - TOON format support
 - **idb-keyval** - IndexedDB persistence
 - **Web Workers** - Offload heavy processing
@@ -83,27 +83,27 @@ A feature-rich, browser-based JSON editor built with React and TypeScript. Edit 
 ## Getting Started
 
 ### Prerequisites
-- Node.js 25.2.1 (use `nvm use` if you have nvm installed)
+- Bun 1.3.11+
 
 ### Development
 ```bash
 # Install dependencies
-pnpm install
+bun install
 
 # Start development server
-pnpm dev
+bun run dev
 
 # Build for production
-pnpm build
+bun run build
 
 # Preview production build
-pnpm preview
+bun run preview
 
 # Run tests
-pnpm test
+bun run test
 
 # Run tests with coverage
-pnpm test:coverage
+bun run test:coverage
 ```
 
 ### Docker
@@ -122,13 +122,13 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines.
 
 | Command | Description |
 |---------|-------------|
-| `pnpm dev` | Start development server (Vite) |
-| `pnpm build` | Build for production |
-| `pnpm preview` | Preview production build |
-| `pnpm test` | Run tests in watch mode |
-| `pnpm test:run` | Run tests once |
-| `pnpm test:coverage` | Generate coverage report |
-| `pnpm lint` | Run ESLint |
+| `bun run dev` | Start development server (Vite) |
+| `bun run build` | Build for production |
+| `bun run preview` | Preview production build |
+| `bun run test` | Run tests in watch mode |
+| `bun run test:run` | Run tests once |
+| `bun run test:coverage` | Generate coverage report |
+| `bun run lint` | Run ESLint |
 | `docker-compose up` | Run production build in Docker |
 | `docker-compose --profile dev up` | Run dev server in Docker |
 

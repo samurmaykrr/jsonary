@@ -6,39 +6,39 @@ default:
 
 # Install dependencies
 install:
-    npm install
+    bun install
 
 # Start development server
 dev:
-    npm run dev
+    bun run dev
 
 # Build for production
 build:
-    npm run build
+    bun run build
 
 # Run ESLint
 lint:
-    npm run lint
+    bun run lint
 
 # Preview production build
 preview:
-    npm run preview
+    bun run preview
 
 # Run tests in watch mode
 test:
-    npm run test
+    bun run test
 
 # Run tests once
 test-run:
-    npm run test:run
+    bun run test:run
 
 # Run tests with coverage
 test-coverage:
-    npm run test:coverage
+    bun run test:coverage
 
 # Type check
 typecheck:
-    npx tsc --noEmit
+    bunx tsc --noEmit
 
 # Clean build artifacts
 clean:

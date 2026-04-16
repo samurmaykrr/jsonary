@@ -3,20 +3,20 @@ FROM node:25.2.1-alpine AS builder
 
 WORKDIR /app
 
-# Install pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# Install Bun runtime
+RUN npm install -g bun
 
 # Copy package files
-COPY package.json pnpm-lock.yaml ./
+COPY package.json bun.lock ./
 
 # Install dependencies
-RUN pnpm install --frozen-lockfile
+RUN bun install --frozen-lockfile
 
 # Copy source code
 COPY . .
 
 # Build application
-RUN pnpm build
+RUN bun run build
 
 # Production stage
 FROM nginx:alpine
