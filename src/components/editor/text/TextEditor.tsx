@@ -316,6 +316,26 @@ export function TextEditor() {
     return uiSettings.theme === 'dark' ? 'jsonary-dark' : 'jsonary-light';
   }, [uiSettings.theme]);
 
+  /**
+   * Keep the viewport anchored to the start of the line after paste.
+   *
+   * Why this exists:
+   * Pasting minified/one-line JSON moves the caret to the end of a very long line,
+   * and Monaco auto-scrolls horizontally to follow it. For large payloads this can
+   * land users far to the right, hiding the start of the JSON. Resetting horizontal
+   * scroll preserves orientation and keeps the beginning visible.
+   */
+  const resetHorizontalScrollAfterPaste = useCallback(
+    (activeEditor: editor.IStandaloneCodeEditor, activeMonaco: Monaco) => {
+      if (editorSettings.lineWrapping) return;
+
+      window.requestAnimationFrame(() => {
+        activeEditor.setScrollLeft(0, activeMonaco.editor.ScrollType.Immediate);
+      });
+    },
+    [editorSettings.lineWrapping]
+  );
+
   // Handle editor mount
   const handleEditorDidMount: OnMount = useCallback((editor, monaco) => {
     editorRef.current = editor;
@@ -350,6 +370,10 @@ export function TextEditor() {
       editor.getAction('editor.action.gotoLine')?.run();
     });
 
+    editor.onDidPaste(() => {
+      resetHorizontalScrollAfterPaste(editor, monaco);
+    });
+
     /**
      * Sync search state when Escape closes Monaco's find widget.
      * 
@@ -371,7 +395,7 @@ export function TextEditor() {
 
     // Focus the editor
     editor.focus();
-  }, [openSearch, closeSearch]);
+  }, [openSearch, closeSearch, resetHorizontalScrollAfterPaste]);
 
   // Handle content changes
   const handleEditorChange = useCallback((value: string | undefined) => {
